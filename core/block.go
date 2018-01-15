@@ -3,6 +3,7 @@ package core
 import (
 	"../common"
 	"../crypto"
+	"../rlp"
 )
 
 // Header represents a block header in the Ethereum blockchain.

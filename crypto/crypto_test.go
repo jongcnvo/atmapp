@@ -1,9 +1,11 @@
 package crypto
 
 import (
+	"fmt"
 	"testing"
 )
 
 func TestSign(t *testing.T) {
-	NewKeccak256()
+	hw := NewKeccak256()
+	fmt.Println("hw:", hw)
 }
