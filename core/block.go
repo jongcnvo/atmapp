@@ -5,6 +5,8 @@ import (
 	"../crypto"
 	"../rlp"
 	"math/big"
+	"sync/atomic"
+	"time"
 )
 
 // Header represents a block header in the Ethereum blockchain.
@@ -37,4 +39,24 @@ func rlpHash(x interface{}) (h common.Hash) {
 	rlp.Encode(hw, x)
 	hw.Sum(h[:0])
 	return h
+}
+
+// Block represents an entire block in the Ethereum blockchain.
+type Block struct {
+	header       *Header
+	uncles       []*Header
+	transactions Transactions
+
+	// caches
+	hash atomic.Value
+	size atomic.Value
+
+	// Td is used by package core to store the total difficulty
+	// of the chain up to and including the block.
+	td *big.Int
+
+	// These fields are used by package eth to track
+	// inter-peer block relay.
+	ReceivedAt   time.Time
+	ReceivedFrom interface{}
 }
