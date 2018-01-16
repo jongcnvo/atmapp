@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-// Header represents a block header in the Ethereum blockchain.
+// Header represents a block header in the blockchain.
 type Header struct {
 	ParentHash  common.Hash       `json:"parentHash"       gencodec:"required"`
 	UncleHash   common.Hash       `json:"sha3Uncles"       gencodec:"required"`
@@ -41,7 +41,7 @@ func rlpHash(x interface{}) (h common.Hash) {
 	return h
 }
 
-// Block represents an entire block in the Ethereum blockchain.
+// Block represents an entire block in the blockchain.
 type Block struct {
 	header       *Header
 	uncles       []*Header
@@ -55,7 +55,7 @@ type Block struct {
 	// of the chain up to and including the block.
 	td *big.Int
 
-	// These fields are used by package eth to track
+	// These fields are used to track
 	// inter-peer block relay.
 	ReceivedAt   time.Time
 	ReceivedFrom interface{}

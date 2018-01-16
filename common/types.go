@@ -14,7 +14,7 @@ const (
 // Hash represents the 32 byte Keccak256 hash of arbitrary data.
 type Hash [HashLength]byte
 
-// Address represents the 20 byte address of an Ethereum account.
+// Address represents the 20 byte address
 type Address [AddressLength]byte
 
 // A BlockNonce is a 64-bit hash which proves (combined with the
