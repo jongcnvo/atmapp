@@ -34,6 +34,8 @@ var (
 	ErrRecoverFailed       = errors.New("recovery failed")
 )
 
+var context *C.secp256k1_context
+
 // RecoverPubkey returns the the public key of the signer.
 // msg must be the 32-byte hash of the message to be signed.
 // sig must be a 65-byte compact ECDSA signature containing the
