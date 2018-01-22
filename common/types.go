@@ -72,6 +72,8 @@ func (a *Address) SetBytes(b []byte) {
 	copy(a[AddressLength-len(b):], b)
 }
 
+func (a Address) Bytes() []byte { return a[:] }
+
 func HexToAddress(s string) Address { return BytesToAddress(FromHex(s)) }
 
 // BytesToBloom converts a byte slice to a bloom filter.

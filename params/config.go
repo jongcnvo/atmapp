@@ -4,6 +4,16 @@ import (
 	"math/big"
 )
 
+const (
+	GenesisGasLimit uint64 = 4712388 // Gas limit of the Genesis block.
+)
+
+var (
+	GenesisDifficulty = big.NewInt(131072) // Difficulty of the Genesis block.
+
+	AllCliqueProtocolChanges = &ChainConfig{big.NewInt(1337), &CliqueConfig{Period: 0, Epoch: 30000}}
+)
+
 // ChainConfig is the core config which determines the blockchain settings.
 //
 // ChainConfig is stored in the database on a per block basis. This means

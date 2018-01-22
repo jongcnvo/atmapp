@@ -1,6 +1,7 @@
 package crypto
 
 import (
+	"../common"
 	"../common/math"
 	"./secp256k1"
 	"crypto/ecdsa"
@@ -38,6 +39,18 @@ func Sign(hash []byte, prv *ecdsa.PrivateKey) (sig []byte, err error) {
 	seckey := math.PaddedBigBytes(prv.D, prv.Params().BitSize/8)
 	defer zeroBytes(seckey)
 	return secp256k1.Sign(hash, seckey)
+}
+
+func FromECDSAPub(pub *ecdsa.PublicKey) []byte {
+	if pub == nil || pub.X == nil || pub.Y == nil {
+		return nil
+	}
+	return elliptic.Marshal(S256(), pub.X, pub.Y)
+}
+
+func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
+	pubBytes := FromECDSAPub(&p)
+	return common.BytesToAddress(Keccak256(pubBytes[1:])[12:])
 }
 
 func zeroBytes(bytes []byte) {

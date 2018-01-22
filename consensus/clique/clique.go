@@ -26,6 +26,8 @@ const (
 var (
 	epochLength = uint64(30000) // Default number of blocks after which to checkpoint and reset the pending votes
 
+	blockPeriod = uint64(15) // Default minimum difference between two consecutive block's timestamps
+
 	extraSeal = 65 // Fixed number of extra-data suffix bytes reserved for signer seal
 
 	extraVanity = 32 // Fixed number of extra-data prefix bytes reserved for signer vanity
@@ -52,9 +54,34 @@ var (
 	ErrInvalidTimestamp             = errors.New("invalid timestamp")
 )
 
+// URL represents the canonical identification URL of a wallet or account.
+//
+// It is a simplified version of url.URL, with the important limitations (which
+// are considered features here) that it contains value-copyable components only,
+// as well as that it doesn't do any URL encoding/decoding of special characters.
+//
+// The former is important to allow an account to be copied without leaving live
+// references to the original version, whereas the latter is important to ensure
+// one single canonical form opposed to many allowed ones by the RFC 3986 spec.
+//
+// As such, these URLs should not be used outside of the scope of an Ethereum
+// wallet or account.
+type URL struct {
+	Scheme string // Protocol scheme to identify a capable account backend
+	Path   string // Path for the backend to identify a unique entity
+}
+
 // SignerFn is a signer callback function to request a hash to be signed by a
 // backing account.
-type SignerFn func(core.Account, []byte) ([]byte, error)
+
+// Account represents an Ethereum account located at a specific location defined
+// by the optional URL field.
+type Account struct {
+	Address common.Address `json:"address"` // Ethereum account address derived from the key
+	URL     URL            `json:"url"`     // Optional resource locator within a backend
+}
+
+type SignerFn func(Account, []byte) ([]byte, error)
 
 // sigHash returns the hash which is used as input for the proof-of-authority
 // signing. It is the hash of the entire header apart from the 65 byte signature

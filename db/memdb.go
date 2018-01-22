@@ -11,10 +11,42 @@ type memdb struct {
 	lock sync.RWMutex
 }
 
+type kv struct{ k, v []byte }
+
+type memBatch struct {
+	db     *memdb
+	writes []kv
+	size   int
+}
+
+func (b *memBatch) Put(key, value []byte) error {
+	b.writes = append(b.writes, kv{common.CopyBytes(key), common.CopyBytes(value)})
+	b.size += len(value)
+	return nil
+}
+
+func (b *memBatch) Write() error {
+	b.db.lock.Lock()
+	defer b.db.lock.Unlock()
+
+	for _, kv := range b.writes {
+		b.db.db[string(kv.k)] = kv.v
+	}
+	return nil
+}
+
+func (b *memBatch) ValueSize() int {
+	return b.size
+}
+
 func NewMemDB() (*memdb, error) {
 	return &memdb{
 		db: make(map[string][]byte),
 	}, nil
+}
+
+func (db *memdb) NewBatch() Batch {
+	return &memBatch{db: db}
 }
 
 func (db *memdb) Put(key []byte, value []byte) error {
