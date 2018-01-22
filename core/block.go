@@ -60,3 +60,7 @@ type Block struct {
 	ReceivedAt   time.Time
 	ReceivedFrom interface{}
 }
+
+func CalcUncleHash(uncles []*Header) common.Hash {
+	return rlpHash(uncles)
+}
