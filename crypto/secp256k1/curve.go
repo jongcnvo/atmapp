@@ -3,7 +3,6 @@ package secp256k1
 import (
 	"../../common/math"
 	"crypto/elliptic"
-	"fmt"
 	"math/big"
 	"unsafe"
 )
@@ -228,8 +227,6 @@ func init() {
 	theCurve.Gx, _ = new(big.Int).SetString("79BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798", 16)
 	theCurve.Gy, _ = new(big.Int).SetString("483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8", 16)
 	theCurve.BitSize = 256
-
-	fmt.Printf("curcve init called")
 }
 
 // S256 returns a BitCurve which implements secp256k1.
