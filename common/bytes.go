@@ -6,6 +6,33 @@ import (
 	"strconv"
 )
 
+const uintBits = 32 << (uint64(^uint(0)) >> 63)
+
+var (
+	//ErrEmptyString string is empty
+	ErrEmptyString = &decError{"empty hex string"}
+	//ErrSyntax string format is not hex
+	ErrSyntax = &decError{"invalid hex string"}
+	//ErrMissingPrefix string for hex without 0x prefix
+	ErrMissingPrefix = &decError{"hex string without 0x prefix"}
+	//ErrOddLength string length is odd not even
+	ErrOddLength = &decError{"hex string of odd length"}
+	//ErrEmptyNumber string only contains 0x prefix
+	ErrEmptyNumber = &decError{"hex string \"0x\""}
+	//ErrLeadingZero hex number with zero beginning
+	ErrLeadingZero = &decError{"hex number with leading zero digits"}
+	//ErrUint64Range hex number is larger than 64 bit len
+	ErrUint64Range = &decError{"hex number > 64 bits"}
+	//ErrUintRange hex number is larger than uint len
+	ErrUintRange = &decError{fmt.Sprintf("hex number > %d bits", uintBits)}
+	//ErrBig256Range hex number is larger than 256 bit len
+	ErrBig256Range = &decError{"hex number > 256 bits"}
+)
+
+type decError struct{ msg string }
+
+func (err decError) Error() string { return err.msg }
+
 //CopyBytes returns a duplication of self byte array
 //Input - copiedBytes: pointer to destination
 //Output - copiedBytes: copy byte array to destination
@@ -15,16 +42,16 @@ func CopyBytes(b []byte) (copiedBytes []byte) {
 	}
 	copiedBytes = make([]byte, len(b))
 	copy(copiedBytes, b)
-
 	return
 }
 
+//Hex2Bytes converts a hex string to byte array
 func Hex2Bytes(str string) []byte {
 	h, _ := hex.DecodeString(str)
-
 	return h
 }
 
+//FromHex converts a hex string with 0x prefix to byte array
 func FromHex(s string) []byte {
 	if len(s) > 1 {
 		if s[0:2] == "0x" || s[0:2] == "0X" {
@@ -36,24 +63,6 @@ func FromHex(s string) []byte {
 	}
 	return Hex2Bytes(s)
 }
-
-const uintBits = 32 << (uint64(^uint(0)) >> 63)
-
-var (
-	ErrEmptyString   = &decError{"empty hex string"}
-	ErrSyntax        = &decError{"invalid hex string"}
-	ErrMissingPrefix = &decError{"hex string without 0x prefix"}
-	ErrOddLength     = &decError{"hex string of odd length"}
-	ErrEmptyNumber   = &decError{"hex string \"0x\""}
-	ErrLeadingZero   = &decError{"hex number with leading zero digits"}
-	ErrUint64Range   = &decError{"hex number > 64 bits"}
-	ErrUintRange     = &decError{fmt.Sprintf("hex number > %d bits", uintBits)}
-	ErrBig256Range   = &decError{"hex number > 256 bits"}
-)
-
-type decError struct{ msg string }
-
-func (err decError) Error() string { return err.msg }
 
 func has0xPrefix(input string) bool {
 	return len(input) >= 2 && input[0] == '0' && (input[1] == 'x' || input[1] == 'X')
@@ -74,15 +83,6 @@ func Decode(input string) ([]byte, error) {
 	return b, err
 }
 
-// MustDecode decodes a hex string with 0x prefix. It panics for invalid input.
-func MustDecode(input string) []byte {
-	dec, err := Decode(input)
-	if err != nil {
-		panic(err)
-	}
-	return dec
-}
-
 func mapError(err error) error {
 	if err, ok := err.(*strconv.NumError); ok {
 		switch err.Err {
@@ -99,4 +99,13 @@ func mapError(err error) error {
 		return ErrOddLength
 	}
 	return err
+}
+
+// MustDecode decodes a hex string with 0x prefix. It panics for invalid input.
+func MustDecode(input string) []byte {
+	dec, err := Decode(input)
+	if err != nil {
+		panic(err)
+	}
+	return dec
 }

@@ -39,7 +39,7 @@ type Database interface {
 	CopyTrie(Trie) Trie
 }
 
-// StateTrie is a Ethereum Merkle Trie.
+// StateTrie is a Merkle Trie.
 type Trie interface {
 	TryGet(key []byte) ([]byte, error)
 	TryUpdate(key, value []byte) error

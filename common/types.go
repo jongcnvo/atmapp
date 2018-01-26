@@ -9,7 +9,9 @@ import (
 )
 
 const (
-	HashLength    = 32
+	//HashLength length of hash string
+	HashLength = 32
+	//AddressLength length of account address
 	AddressLength = 20
 )
 
@@ -37,7 +39,7 @@ type Bloom [BloomByteLength]byte
 
 var bytesT = reflect.TypeOf(Bytes(nil))
 
-// Sets the hash to the value of b. If b is larger than len(h), 'b' will be cropped (from the left).
+//SetBytes set the hash to the value of b. If b is larger than len(h), 'b' will be cropped (from the left).
 func (h *Hash) SetBytes(b []byte) {
 	if len(b) > len(h) {
 		b = b[len(b)-HashLength:]
@@ -46,21 +48,21 @@ func (h *Hash) SetBytes(b []byte) {
 	copy(h[HashLength-len(b):], b)
 }
 
+//BytesToHash set the hash to the value of b
 func BytesToHash(b []byte) Hash {
 	var h Hash
 	h.SetBytes(b)
 	return h
 }
 
+//HexToHash set the hash to the value of s
 func HexToHash(s string) Hash { return BytesToHash(FromHex(s)) }
-func (h Hash) Hex() string    { return Encode(h[:]) }
-func (h Hash) Bytes() []byte  { return h[:] }
 
-func BytesToAddress(b []byte) Address {
-	var a Address
-	a.SetBytes(b)
-	return a
-}
+//Hex convert hash to hex string
+func (h Hash) Hex() string { return Encode(h[:]) }
+
+//Bytes convert hash to byte slice
+func (h Hash) Bytes() []byte { return h[:] }
 
 // String implements the stringer interface and is used also by the logger when
 // doing full logging into a file.
@@ -68,7 +70,7 @@ func (h Hash) String() string {
 	return h.Hex()
 }
 
-// Sets the address to the value of b. If b is larger than len(a) it will panic
+// SetBytes sets the address to the value of b. If b is larger than len(a) it will panic
 func (a *Address) SetBytes(b []byte) {
 	if len(b) > len(a) {
 		b = b[len(b)-AddressLength:]
@@ -76,16 +78,27 @@ func (a *Address) SetBytes(b []byte) {
 	copy(a[AddressLength-len(b):], b)
 }
 
-func (a Address) Bytes() []byte { return a[:] }
+//BytesToAddress set the address to the value to b
+func BytesToAddress(b []byte) Address {
+	var a Address
+	a.SetBytes(b)
+	return a
+}
 
+//HexToAddress set the address to the value of s
 func HexToAddress(s string) Address { return BytesToAddress(FromHex(s)) }
 
-// BytesToBloom converts a byte slice to a bloom filter.
-// It panics if b is not of suitable size.
-func BytesToBloom(b []byte) Bloom {
-	var bloom Bloom
-	bloom.SetBytes(b)
-	return bloom
+//Bytes convert address to byte slice
+func (a Address) Bytes() []byte { return a[:] }
+
+// MarshalText returns the hex representation of a.
+func (a Address) MarshalText() ([]byte, error) {
+	return Bytes(a[:]).MarshalText()
+}
+
+// UnmarshalText parses a hash in hex syntax.
+func (a *Address) UnmarshalText(input []byte) error {
+	return UnmarshalFixedText("Address", input, a[:])
 }
 
 // SetBytes sets the content of b to the given bytes.
@@ -95,6 +108,14 @@ func (b *Bloom) SetBytes(d []byte) {
 		panic(fmt.Sprintf("bloom bytes too big %d %d", len(b), len(d)))
 	}
 	copy(b[BloomByteLength-len(d):], d)
+}
+
+// BytesToBloom converts a byte slice to a bloom filter.
+// It panics if b is not of suitable size.
+func BytesToBloom(b []byte) Bloom {
+	var bloom Bloom
+	bloom.SetBytes(b)
+	return bloom
 }
 
 // EncodeNonce converts the given integer to a block nonce.
@@ -147,16 +168,6 @@ func (b *Bytes) UnmarshalText(input []byte) error {
 	return err
 }
 
-// MarshalText returns the hex representation of a.
-func (a Address) MarshalText() ([]byte, error) {
-	return Bytes(a[:]).MarshalText()
-}
-
-// UnmarshalText parses a hash in hex syntax.
-func (a *Address) UnmarshalText(input []byte) error {
-	return UnmarshalFixedText("Address", input, a[:])
-}
-
 func isString(input []byte) bool {
 	return len(input) >= 2 && input[0] == '"' && input[len(input)-1] == '"'
 }
@@ -170,6 +181,21 @@ func wrapTypeError(err error, typ reflect.Type) error {
 		return &json.UnmarshalTypeError{Value: err.Error(), Type: typ}
 	}
 	return err
+}
+
+const badNibble = ^uint64(0)
+
+func decodeNibble(in byte) uint64 {
+	switch {
+	case in >= '0' && in <= '9':
+		return uint64(in - '0')
+	case in >= 'A' && in <= 'F':
+		return uint64(in - 'A' + 10)
+	case in >= 'a' && in <= 'f':
+		return uint64(in - 'a' + 10)
+	default:
+		return badNibble
+	}
 }
 
 // UnmarshalFixedText decodes the input as a string with 0x prefix. The length of out
@@ -193,6 +219,10 @@ func UnmarshalFixedText(typname string, input, out []byte) error {
 	return nil
 }
 
+func bytesHave0xPrefix(input []byte) bool {
+	return len(input) >= 2 && input[0] == '0' && (input[1] == 'x' || input[1] == 'X')
+}
+
 func checkText(input []byte, wantPrefix bool) ([]byte, error) {
 	if len(input) == 0 {
 		return nil, nil // empty strings are allowed
@@ -206,23 +236,4 @@ func checkText(input []byte, wantPrefix bool) ([]byte, error) {
 		return nil, ErrOddLength
 	}
 	return input, nil
-}
-
-func bytesHave0xPrefix(input []byte) bool {
-	return len(input) >= 2 && input[0] == '0' && (input[1] == 'x' || input[1] == 'X')
-}
-
-const badNibble = ^uint64(0)
-
-func decodeNibble(in byte) uint64 {
-	switch {
-	case in >= '0' && in <= '9':
-		return uint64(in - '0')
-	case in >= 'A' && in <= 'F':
-		return uint64(in - 'A' + 10)
-	case in >= 'a' && in <= 'f':
-		return uint64(in - 'a' + 10)
-	default:
-		return badNibble
-	}
 }

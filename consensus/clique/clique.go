@@ -64,8 +64,7 @@ var (
 // references to the original version, whereas the latter is important to ensure
 // one single canonical form opposed to many allowed ones by the RFC 3986 spec.
 //
-// As such, these URLs should not be used outside of the scope of an Ethereum
-// wallet or account.
+// As such, these URLs should not be used outside of the scope of an wallet or account.
 type URL struct {
 	Scheme string // Protocol scheme to identify a capable account backend
 	Path   string // Path for the backend to identify a unique entity
@@ -74,10 +73,10 @@ type URL struct {
 // SignerFn is a signer callback function to request a hash to be signed by a
 // backing account.
 
-// Account represents an Ethereum account located at a specific location defined
+// Account represents an account located at a specific location defined
 // by the optional URL field.
 type Account struct {
-	Address common.Address `json:"address"` // Ethereum account address derived from the key
+	Address common.Address `json:"address"` // Account address derived from the key
 	URL     URL            `json:"url"`     // Optional resource locator within a backend
 }
 

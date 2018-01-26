@@ -46,7 +46,7 @@ func (ap *testerAccountPool) address(account string) common.Address {
 	if ap.accounts[account] == nil {
 		ap.accounts[account], _ = crypto.GenerateKey()
 	}
-	// Resolve and return the Ethereum address
+	// Resolve and return the address
 	return crypto.PubkeyToAddress(ap.accounts[account].PublicKey)
 }
 
@@ -83,7 +83,7 @@ func TestVoting(t *testing.T) {
 			signers: []string{"A"},
 			votes:   []testerVote{{signer: "A"}},
 			results: []string{"A"},
-		},{
+		}, {
 			// Single signer, voting to add two others (only accept first, second needs 2 votes)
 			signers: []string{"A"},
 			votes: []testerVote{
