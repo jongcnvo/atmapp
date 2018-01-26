@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	// number of bits in a big.Word
+	// number of bits in a big.Word, 32 bits or 64 bits
 	wordBits = 32 << (uint64(^big.Word(0)) >> 63)
 	// number of bytes in a big.Word
 	wordBytes = wordBits / 8
