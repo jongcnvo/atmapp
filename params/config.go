@@ -9,8 +9,7 @@ const (
 )
 
 var (
-	GenesisDifficulty = big.NewInt(131072) // Difficulty of the Genesis block.
-
+	GenesisDifficulty        = big.NewInt(131072) // Difficulty of the Genesis block.
 	AllCliqueProtocolChanges = &ChainConfig{big.NewInt(1337), &CliqueConfig{Period: 0, Epoch: 30000}}
 )
 
