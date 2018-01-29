@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// Tests big number operations
+// Test big number operations
 func TestBigOper(t *testing.T) {
 
 	// test word length in math.big
