@@ -52,22 +52,22 @@ type LDBDatabase struct {
 }
 
 // Get returns the given key if it's present.
-func (db *LDBDatabase) Get(key []byte) ([]byte, error) {
+func (ldb *LDBDatabase) Get(key []byte) ([]byte, error) {
 	// Measure the database get latency, if requested
-	if db.getTimer != nil {
-		defer db.getTimer.UpdateSince(time.Now())
+	if ldb.getTimer != nil {
+		defer ldb.getTimer.UpdateSince(time.Now())
 	}
 	// Retrieve the key and increment the miss counter if not found
-	dat, err := db.db.Get(key, nil)
+	dat, err := ldb.db.Get(key, nil)
 	if err != nil {
-		if db.missMeter != nil {
-			db.missMeter.Mark(1)
+		if ldb.missMeter != nil {
+			ldb.missMeter.Mark(1)
 		}
 		return nil, err
 	}
 	// Otherwise update the actually retrieved amount of data
-	if db.readMeter != nil {
-		db.readMeter.Mark(int64(len(dat)))
+	if ldb.readMeter != nil {
+		ldb.readMeter.Mark(int64(len(dat)))
 	}
 	return dat, nil
 	//return rle.Decompress(dat)

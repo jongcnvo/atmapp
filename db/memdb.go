@@ -45,42 +45,42 @@ func NewMemDB() (*memdb, error) {
 	}, nil
 }
 
-func (db *memdb) NewBatch() Batch {
-	return &memBatch{db: db}
+func (mdb *memdb) NewBatch() Batch {
+	return &memBatch{db: mdb}
 }
 
-func (db *memdb) Put(key []byte, value []byte) error {
-	db.lock.Lock()
-	defer db.lock.Unlock()
+func (mdb *memdb) Put(key []byte, value []byte) error {
+	mdb.lock.Lock()
+	defer mdb.lock.Unlock()
 
-	db.db[string(key)] = common.CopyBytes(value)
+	mdb.db[string(key)] = common.CopyBytes(value)
 	return nil
 }
 
-func (db *memdb) Has(key []byte) (bool, error) {
-	db.lock.RLock()
-	defer db.lock.RUnlock()
+func (mdb *memdb) Has(key []byte) (bool, error) {
+	mdb.lock.RLock()
+	defer mdb.lock.RUnlock()
 
-	_, ok := db.db[string(key)]
+	_, ok := mdb.db[string(key)]
 	return ok, nil
 }
 
-func (db *memdb) Get(key []byte) ([]byte, error) {
-	db.lock.RLock()
-	defer db.lock.RUnlock()
+func (mdb *memdb) Get(key []byte) ([]byte, error) {
+	mdb.lock.RLock()
+	defer mdb.lock.RUnlock()
 
-	if entry, ok := db.db[string(key)]; ok {
+	if entry, ok := mdb.db[string(key)]; ok {
 		return common.CopyBytes(entry), nil
 	}
 	return nil, errors.New("not found")
 }
 
-func (db *memdb) Delete(key []byte) error {
-	db.lock.Lock()
-	defer db.lock.Unlock()
+func (mdb *memdb) Delete(key []byte) error {
+	mdb.lock.Lock()
+	defer mdb.lock.Unlock()
 
-	delete(db.db, string(key))
+	delete(mdb.db, string(key))
 	return nil
 }
 
-func (db *memdb) Close() {}
+func (mdb *memdb) Close() {}
