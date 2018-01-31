@@ -1,6 +1,7 @@
 package main
 
 import (
+	"../core"
 	"../node"
 	"../p2p"
 	"../p2p/nat"
@@ -37,9 +38,9 @@ func main() {
 // It creates a default node based on the command line arguments and runs it in
 // blocking mode, waiting for it to be shut down.
 func atmapp(ctx *cli.Context) error {
-	//node := makeFullNode(ctx)
+	node := makeFullNode(ctx)
 	//startNode(ctx, node)
-	//node.Wait()
+	node.Wait()
 	return nil
 }
 
@@ -78,6 +79,11 @@ const (
 	DefaultWSPort   = 8546        // Default TCP port for the websocket RPC server
 )
 
+type ATMConfig struct {
+	ATM  core.Config
+	Node node.Config
+}
+
 // DefaultConfig contains reasonable default settings.
 var DefaultConfig = node.Config{
 	DataDir:     DefaultDataDir(),
@@ -93,12 +99,28 @@ var DefaultConfig = node.Config{
 	},
 }
 
-func defaultNodeConfig() node.Config {
+// DefaultNodeConfig 123
+func DefaultNodeConfig() node.Config {
 	cfg := DefaultConfig
 	cfg.Name = clientIdentifier
 	//cfg.Version = params.VersionWithCommit(gitCommit)
-	cfg.HTTPModules = append(cfg.HTTPModules, "eth", "shh")
-	cfg.WSModules = append(cfg.WSModules, "eth", "shh")
-	cfg.IPCPath = "geth.ipc"
+	cfg.HTTPModules = append(cfg.HTTPModules, "atm")
+	cfg.WSModules = append(cfg.WSModules, "atm")
+	cfg.IPCPath = "atmapp.ipc"
 	return cfg
+}
+
+func makeFullNode(ctx *cli.Context) *node.Node {
+
+	// Load defaults.
+	cfg := ATMConfig{
+		ATM:  core.DefaultConfig,
+		Node: DefaultNodeConfig(),
+	}
+
+	stack, err := node.New(&cfg.Node)
+	if err != nil {
+		return nil
+	}
+	return stack
 }

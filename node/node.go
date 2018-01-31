@@ -4,9 +4,12 @@ import (
 	"../log"
 	"../p2p"
 	"../rpc"
+	"errors"
 	"github.com/prometheus/prometheus/util/flock"
 	"net"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"sync"
 )
 
@@ -85,4 +88,66 @@ type Service interface {
 	// Stop terminates all goroutines belonging to the service, blocking until they
 	// are all terminated.
 	Stop() error
+}
+
+// New creates a new P2P node, ready for protocol registration.
+func New(conf *Config) (*Node, error) {
+	// Copy config and resolve the datadir so future changes to the current
+	// working directory don't affect the node.
+	confCopy := *conf
+	conf = &confCopy
+	if conf.DataDir != "" {
+		absdatadir, err := filepath.Abs(conf.DataDir)
+		if err != nil {
+			return nil, err
+		}
+		conf.DataDir = absdatadir
+	}
+	// Ensure that the instance name doesn't cause weird conflicts with
+	// other files in the data directory.
+	if strings.ContainsAny(conf.Name, `/\`) {
+		return nil, errors.New(`Config.Name must not contain '/' or '\'`)
+	}
+	if conf.Name == datadirDefaultKeyStore {
+		return nil, errors.New(`Config.Name cannot be "` + datadirDefaultKeyStore + `"`)
+	}
+	if strings.HasSuffix(conf.Name, ".ipc") {
+		return nil, errors.New(`Config.Name cannot end in ".ipc"`)
+	}
+	// Ensure that the AccountManager method works before the node has started.
+	// We rely on this in cmd/geth.
+	//am, ephemeralKeystore, err := makeAccountManager(conf)
+	//if err != nil {
+	//	return nil, err
+	//}
+	if conf.Logger == nil {
+		conf.Logger = log.New()
+	}
+	// Note: any interaction with Config that would create/touch files
+	// in the data directory or instance directory is delayed until Start.
+	return &Node{
+		//accman:            am,
+		//ephemeralKeystore: ephemeralKeystore,
+		config:       conf,
+		serviceFuncs: []ServiceConstructor{},
+		ipcEndpoint:  conf.IPCEndpoint(),
+		httpEndpoint: conf.HTTPEndpoint(),
+		wsEndpoint:   conf.WSEndpoint(),
+		//eventmux:          new(event.TypeMux),
+		log: conf.Logger,
+	}, nil
+}
+
+// Wait blocks the thread until the node is stopped. If the node is not running
+// at the time of invocation, the method immediately returns.
+func (n *Node) Wait() {
+	n.lock.RLock()
+	if n.server == nil {
+		n.lock.RUnlock()
+		return
+	}
+	stop := n.stop
+	n.lock.RUnlock()
+
+	<-stop
 }

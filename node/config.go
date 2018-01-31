@@ -3,6 +3,11 @@ package node
 import (
 	"../log"
 	"../p2p"
+	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
 )
 
 // Config represents a small collection of configuration values to fine tune the
@@ -100,4 +105,55 @@ type Config struct {
 
 	// Logger is a custom logger to use with the p2p.Server.
 	Logger log.Logger
+}
+
+const (
+	datadirPrivateKey      = "nodekey"            // Path within the datadir to the node's private key
+	datadirDefaultKeyStore = "keystore"           // Path within the datadir to the keystore
+	datadirStaticNodes     = "static-nodes.json"  // Path within the datadir to the static node list
+	datadirTrustedNodes    = "trusted-nodes.json" // Path within the datadir to the trusted node list
+	datadirNodeDatabase    = "nodes"              // Path within the datadir to store the node infos
+)
+
+// IPCEndpoint resolves an IPC endpoint based on a configured value, taking into
+// account the set data folders as well as the designated platform we're currently
+// running on.
+func (c *Config) IPCEndpoint() string {
+	// Short circuit if IPC has not been enabled
+	if c.IPCPath == "" {
+		return ""
+	}
+	// On windows we can only use plain top-level pipes
+	if runtime.GOOS == "windows" {
+		if strings.HasPrefix(c.IPCPath, `\\.\pipe\`) {
+			return c.IPCPath
+		}
+		return `\\.\pipe\` + c.IPCPath
+	}
+	// Resolve names into the data directory full paths otherwise
+	if filepath.Base(c.IPCPath) == c.IPCPath {
+		if c.DataDir == "" {
+			return filepath.Join(os.TempDir(), c.IPCPath)
+		}
+		return filepath.Join(c.DataDir, c.IPCPath)
+	}
+	return c.IPCPath
+}
+
+// HTTPEndpoint resolves an HTTP endpoint based on the configured host interface
+// and port parameters.
+func (c *Config) HTTPEndpoint() string {
+	if c.HTTPHost == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s:%d", c.HTTPHost, c.HTTPPort)
+}
+
+// WSEndpoint resolves an websocket endpoint based on the configured host interface
+// and port parameters.
+func (c *Config) WSEndpoint() string {
+	if c.WSHost == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s:%d", c.WSHost, c.WSPort)
 }
