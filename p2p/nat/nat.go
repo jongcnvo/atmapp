@@ -1,6 +1,7 @@
 package nat
 
 import (
+	"../../log"
 	"fmt"
 	"net"
 	"sync"
@@ -108,4 +109,40 @@ func (n *autodisc) wait() error {
 		return fmt.Errorf("no %s router discovered", n.what)
 	}
 	return nil
+}
+
+const (
+	mapTimeout        = 20 * time.Minute
+	mapUpdateInterval = 15 * time.Minute
+)
+
+// Map adds a port mapping on m and keeps it alive until c is closed.
+// This function is typically invoked in its own goroutine.
+func Map(m Interface, c chan struct{}, protocol string, extport, intport int, name string) {
+	log := log.New("proto", protocol, "extport", extport, "intport", intport, "interface", m)
+	refresh := time.NewTimer(mapUpdateInterval)
+	defer func() {
+		refresh.Stop()
+		log.Debug("Deleting port mapping")
+		m.DeleteMapping(protocol, extport, intport)
+	}()
+	if err := m.AddMapping(protocol, extport, intport, name, mapTimeout); err != nil {
+		log.Debug("Couldn't add port mapping", "err", err)
+	} else {
+		log.Info("Mapped network port")
+	}
+	for {
+		select {
+		case _, ok := <-c:
+			if !ok {
+				return
+			}
+		case <-refresh.C:
+			log.Trace("Refreshing port mapping")
+			if err := m.AddMapping(protocol, extport, intport, name, mapTimeout); err != nil {
+				log.Debug("Couldn't add port mapping", "err", err)
+			}
+			refresh.Reset(mapUpdateInterval)
+		}
+	}
 }

@@ -21,7 +21,6 @@ import "C"
 
 import (
 	"errors"
-	"fmt"
 	"unsafe"
 )
 
@@ -38,7 +37,6 @@ var (
 var context *C.secp256k1_context
 
 func init() {
-	fmt.Println("init")
 	// around 20 ms on a modern CPU.
 	context = C.secp256k1_context_create_sign_verify()
 	C.secp256k1_context_set_illegal_callback(context, C.callbackFunc(C.secp256k1GoPanicIllegal), nil)

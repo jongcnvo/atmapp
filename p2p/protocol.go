@@ -1,11 +1,10 @@
 package p2p
 
 import (
-	"../common"
-	"../log"
 	"../rlp"
 	"./discover"
-	"sync"
+	"fmt"
+	"io"
 )
 
 // Protocol represents a P2P subprotocol implementation.
@@ -40,22 +39,16 @@ type Protocol struct {
 	PeerInfo func(id discover.NodeID) interface{}
 }
 
-type DiscReason uint
+func (p Protocol) cap() Cap {
+	return Cap{p.Name, p.Version}
+}
 
-// Peer represents a connected remote node.
-type Peer struct {
-	rw      *conn
-	running map[string]*protoRW
-	log     log.Logger
-	created common.AbsTime
+type capsByNameAndVersion []Cap
 
-	wg       sync.WaitGroup
-	protoErr chan error
-	closed   chan struct{}
-	disc     chan DiscReason
-
-	// events receives message send / receive events if set
-	//events *event.Feed
+func (cs capsByNameAndVersion) Len() int      { return len(cs) }
+func (cs capsByNameAndVersion) Swap(i, j int) { cs[i], cs[j] = cs[j], cs[i] }
+func (cs capsByNameAndVersion) Less(i, j int) bool {
+	return cs[i].Name < cs[j].Name || (cs[i].Name == cs[j].Name && cs[i].Version < cs[j].Version)
 }
 
 // protoHandshake is the RLP structure of the protocol handshake.
@@ -84,6 +77,35 @@ type protoRW struct {
 	werr   chan<- error    // for write results
 	offset uint64
 	w      MsgWriter
+}
+
+func (rw *protoRW) WriteMsg(msg Msg) (err error) {
+	if msg.Code >= rw.Length {
+		return newPeerError(errInvalidMsgCode, "not handled")
+	}
+	msg.Code += rw.offset
+	select {
+	case <-rw.wstart:
+		err = rw.w.WriteMsg(msg)
+		// Report write status back to Peer.run. It will initiate
+		// shutdown if the error is non-nil and unblock the next write
+		// otherwise. The calling protocol code should exit for errors
+		// as well but we don't want to rely on that.
+		rw.werr <- err
+	case <-rw.closed:
+		err = fmt.Errorf("shutting down")
+	}
+	return err
+}
+
+func (rw *protoRW) ReadMsg() (Msg, error) {
+	select {
+	case msg := <-rw.in:
+		msg.Code -= rw.offset
+		return msg, nil
+	case <-rw.closed:
+		return Msg{}, io.EOF
+	}
 }
 
 type discoverTable interface {

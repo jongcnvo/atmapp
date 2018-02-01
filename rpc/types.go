@@ -44,3 +44,19 @@ type Server struct {
 	codecsMu sync.Mutex
 	codecs   *set.Set
 }
+
+// NewServer will create a new server instance with no registered handlers.
+func NewServer() *Server {
+	server := &Server{
+		services: make(serviceRegistry),
+		codecs:   set.New(),
+		run:      1,
+	}
+
+	// register a default service which will provide meta information about the RPC service such as the services and
+	// methods it offers.
+	//rpcService := &RPCService{server}
+	//server.RegisterName(MetadataApi, rpcService)
+
+	return server
+}
