@@ -18,6 +18,7 @@ func main() {
 		Name:      "ATMChain Core Layer Application",
 		Usage:     "Run as a ATM full node",
 		Action:    atmapp,
+		Version:   "0.1",
 		Copyright: "Copyright 2017-2018 The ATMChain Foundation",
 	}
 
