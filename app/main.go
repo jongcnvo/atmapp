@@ -4,8 +4,9 @@ import (
 	"../core"
 	"../log"
 	"../node"
+	"../utils"
 	"fmt"
-	"gopkg.in/urfave/cli.v2"
+	"gopkg.in/urfave/cli.v1"
 	"os"
 )
 
@@ -13,15 +14,30 @@ const (
 	clientIdentifier = "atmapp" // Client identifier to advertise over the network
 )
 
-func main() {
-	app := &cli.App{
-		Name:      "ATMChain Core Layer Application",
-		Usage:     "Run as a ATM full node",
-		Action:    atmapp,
-		Version:   "0.1",
-		Copyright: "Copyright 2017-2018 The ATMChain Foundation",
-	}
+var (
+	gitCommit = ""
+	app       = utils.NewApp(gitCommit, "the ATMChain command line interface")
+)
 
+func init() {
+	// Initialize the CLI app and start Geth
+	app.Action = atmapp
+	app.HideVersion = true // we have a command to print the version
+	app.Copyright = "Copyright 2017-2018 The ATMChain Foundation"
+	app.Before = func(ctx *cli.Context) error {
+		//runtime.GOMAXPROCS(runtime.NumCPU())
+		if err := utils.Setup(ctx); err != nil {
+			return err
+		}
+		// Start system runtime metrics collection
+		//go metrics.CollectProcessMetrics(3 * time.Second)
+
+		//utils.SetupNetwork(ctx)
+		return nil
+	}
+}
+
+func main() {
 	app.Run(os.Args)
 
 	fmt.Println("    ___   ______ __  ___ ______ __            _ ")
