@@ -34,7 +34,7 @@ func Any() Interface {
 	// TODO: attempt to discover whether the local machine has an
 	// Internet-class address. Return ExtIP in this case.
 	return startautodisc("UPnP or NAT-PMP", func() Interface {
-		found := make(chan Interface, 2)
+		found := make(chan Interface, 1)
 		go func() { found <- discoverUPnP() }()
 		//go func() { found <- discoverPMP() }()
 		for i := 0; i < cap(found); i++ {

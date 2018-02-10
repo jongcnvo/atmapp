@@ -89,17 +89,17 @@ func TerminalFormat(usecolor bool) Format {
 		if usecolor {
 			switch r.Lvl {
 			case LvlCrit:
-				color = 35
+				color = 35 //pink
 			case LvlError:
-				color = 31
+				color = 31 //red
 			case LvlWarn:
-				color = 33
+				color = 33 //yellow
 			case LvlInfo:
-				color = 32
+				color = 34 //blue
 			case LvlDebug:
-				color = 36
+				color = 36 //light blue
 			case LvlTrace:
-				color = 34
+				color = 32 //green
 			}
 		}
 

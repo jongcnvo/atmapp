@@ -168,6 +168,17 @@ func convertFileLockError(err error) error {
 	return err
 }
 
+func (n *Node) Register(constructor ServiceConstructor) error {
+	n.lock.Lock()
+	defer n.lock.Unlock()
+
+	if n.server != nil {
+		return ErrNodeRunning
+	}
+	n.serviceFuncs = append(n.serviceFuncs, constructor)
+	return nil
+}
+
 // Start create a live P2P node and starts running it.
 func (n *Node) Start() error {
 	n.lock.Lock()
