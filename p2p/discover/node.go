@@ -193,6 +193,23 @@ func (n *Node) validateComplete() error {
 	return err
 }
 
+// The string representation of a Node is a URL.
+// Please see ParseNode for a description of the format.
+func (n *Node) String() string {
+	u := url.URL{Scheme: "enode"}
+	if n.Incomplete() {
+		u.Host = fmt.Sprintf("%x", n.ID[:])
+	} else {
+		addr := net.TCPAddr{IP: n.IP, Port: int(n.TCP)}
+		u.User = url.User(fmt.Sprintf("%x", n.ID[:]))
+		u.Host = addr.String()
+		if n.UDP != n.TCP {
+			u.RawQuery = "discport=" + strconv.Itoa(int(n.UDP))
+		}
+	}
+	return u.String()
+}
+
 // recoverNodeID computes the public key used to sign the
 // given hash from the signature.
 func recoverNodeID(hash, sig []byte) (id NodeID, err error) {
