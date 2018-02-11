@@ -59,6 +59,14 @@ func FromECDSAPub(pub *ecdsa.PublicKey) []byte {
 	return elliptic.Marshal(S256(), pub.X, pub.Y)
 }
 
+func ToECDSAPub(pub []byte) *ecdsa.PublicKey {
+	if len(pub) == 0 {
+		return nil
+	}
+	x, y := elliptic.Unmarshal(S256(), pub)
+	return &ecdsa.PublicKey{Curve: S256(), X: x, Y: y}
+}
+
 func PubkeyToAddress(p ecdsa.PublicKey) common.Address {
 	pubBytes := FromECDSAPub(&p)
 	return common.BytesToAddress(Keccak256(pubBytes[1:])[12:])

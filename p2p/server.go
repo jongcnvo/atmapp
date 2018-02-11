@@ -3,6 +3,7 @@ package p2p
 import (
 	"../common"
 	"../log"
+	"../rlp"
 	"./discover"
 	"./nat"
 	"container/heap"
@@ -42,6 +43,13 @@ const (
 	// This is the amount of time spent waiting in between
 	// redialing a certain node.
 	dialHistoryExpiration = 30 * time.Second
+
+	// Maximum time allowed for reading a complete message.
+	// This is effectively the amount of time a connection can be idle.
+	frameReadTimeout = 30 * time.Second
+
+	// Maximum amount of time allowed for writing a complete message.
+	frameWriteTimeout = 20 * time.Second
 )
 
 const (
@@ -176,6 +184,18 @@ type Msg struct {
 	Size       uint32 // size of the paylod
 	Payload    io.Reader
 	ReceivedAt time.Time
+}
+
+// Decode parses the RLP content of a message into
+// the given value, which must be a pointer.
+//
+// For the decoding rules, please see package rlp.
+func (msg Msg) Decode(val interface{}) error {
+	s := rlp.NewStream(msg.Payload, uint64(msg.Size))
+	if err := s.Decode(val); err != nil {
+		return newPeerError(errInvalidMsg, "(code %x) (size %d) %v", msg.Code, msg.Size, err)
+	}
+	return nil
 }
 
 type MsgReader interface {
@@ -796,7 +816,7 @@ func (srv *Server) Start() (err error) {
 		return fmt.Errorf("Server.PrivateKey must be set to a non-nil key")
 	}
 	if srv.newTransport == nil {
-		//srv.newTransport = newRLPX
+		srv.newTransport = newRLPX
 	}
 	if srv.Dialer == nil {
 		srv.Dialer = TCPDialer{&net.Dialer{Timeout: defaultDialTimeout}}
