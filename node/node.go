@@ -405,11 +405,11 @@ func (n *Node) startIPC(apis []rpc.API) error {
 	// All APIs registered, start the IPC listener
 	var (
 		listener net.Listener
-		//err      error
+		err      error
 	)
-	//if listener, err = rpc.CreateIPCListener(n.ipcEndpoint); err != nil {
-	//	return err
-	//}
+	if listener, err = rpc.CreateIPCListener(n.ipcEndpoint); err != nil {
+		return err
+	}
 	go func() {
 		n.log.Info(fmt.Sprintf("IPC endpoint opened: %s", n.ipcEndpoint))
 
