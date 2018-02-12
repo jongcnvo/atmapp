@@ -1,6 +1,12 @@
 package core
 
 import (
+	"../common"
+	"../event"
+	"../params"
+	"./state"
+	"math/big"
+	"sync"
 	"time"
 )
 
@@ -36,4 +42,60 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	GlobalQueue:  1024,
 
 	Lifetime: 3 * time.Hour,
+}
+
+// TxPool contains all currently known transactions. Transactions
+// enter the pool when they are received from the network or submitted
+// locally. They exit the pool when they are included in the blockchain.
+//
+// The pool separates processable transactions (which can be applied to the
+// current state) and future transactions. Transactions move between those
+// two states over time as they are received and processed.
+type TxPool struct {
+	config       TxPoolConfig
+	chainconfig  *params.ChainConfig
+	chain        blockChain
+	gasPrice     *big.Int
+	txFeed       event.Feed
+	scope        event.SubscriptionScope
+	chainHeadCh  chan ChainHeadEvent
+	chainHeadSub event.Subscription
+	signer       Signer
+	mu           sync.RWMutex
+
+	currentState  *state.StateDB      // Current state in the blockchain head
+	pendingState  *state.ManagedState // Pending state tracking virtual nonces
+	currentMaxGas uint64              // Current gas limit for transaction caps
+
+	locals  *accountSet // Set of local transaction to exempt from eviction rules
+	journal *txJournal  // Journal of local transaction to back up to disk
+
+	pending map[common.Address]*txList         // All currently processable transactions
+	queue   map[common.Address]*txList         // Queued but non-processable transactions
+	beats   map[common.Address]time.Time       // Last heartbeat from each known account
+	all     map[common.Hash]*Transaction // All transactions to allow lookups
+	priced  *txPricedList                      // All transactions sorted by price
+
+	wg sync.WaitGroup // for shutdown sync
+
+	homestead bool
+}
+
+// blockChain provides the state of blockchain and current gas limit to do
+// some pre checks in tx pool and event subscribers.
+type blockChain interface {
+	CurrentBlock() *Block
+	GetBlock(hash common.Hash, number uint64) *Block
+	StateAt(root common.Hash) (*state.StateDB, error)
+
+	SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Subscription
+}
+
+type ChainHeadEvent struct{ Block *Block }
+
+// accountSet is simply a set of addresses to check for existence, and a signer
+// capable of deriving addresses from transactions.
+type accountSet struct {
+	accounts map[common.Address]struct{}
+	signer   Signer
 }

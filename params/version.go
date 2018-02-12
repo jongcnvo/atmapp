@@ -19,3 +19,11 @@ var Version = func() string {
 	}
 	return v
 }()
+
+func VersionWithCommit(gitCommit string) string {
+	vsn := Version
+	if len(gitCommit) >= 8 {
+		vsn += "-" + gitCommit[:8]
+	}
+	return vsn
+}

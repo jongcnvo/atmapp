@@ -5,6 +5,7 @@ import (
 	"../node"
 	"../p2p"
 	"../p2p/nat"
+	"../params"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -65,11 +66,11 @@ type ATMConfig struct {
 	Node node.Config
 }
 
-// DefaultNodeConfig 123
+// DefaultNodeConfig
 func DefaultNodeConfig() node.Config {
 	cfg := DefaultConfig
 	cfg.Name = clientIdentifier
-	//cfg.Version = params.VersionWithCommit(gitCommit)
+	cfg.Version = params.VersionWithCommit(gitCommit)
 	cfg.HTTPModules = append(cfg.HTTPModules, "atm")
 	cfg.WSModules = append(cfg.WSModules, "atm")
 	cfg.IPCPath = "atmapp.ipc"

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"gopkg.in/urfave/cli.v1"
 	"os"
+	"runtime"
 )
 
 const (
@@ -25,7 +26,7 @@ func init() {
 	app.HideVersion = true // we have a command to print the version
 	app.Copyright = "Copyright 2017-2018 The ATMChain Foundation"
 	app.Before = func(ctx *cli.Context) error {
-		//runtime.GOMAXPROCS(runtime.NumCPU())
+		runtime.GOMAXPROCS(runtime.NumCPU())
 		if err := utils.Setup(ctx); err != nil {
 			return err
 		}
@@ -38,13 +39,18 @@ func init() {
 }
 
 func main() {
-	app.Run(os.Args)
+	fmt.Println("")
+	fmt.Println("        ___   ______ __  ___ ______ __            _ ")
+	fmt.Println("       /   | /_  __//  |/  // ____// /_   ____ _ (_)____ ")
+	fmt.Println("      / /| |  / /  / /|_/ // /    / __ \\ / __ `// // __ \\")
+	fmt.Println("     / ___ | / /  / /  / // /___ / / / // /_/ // / // / /")
+	fmt.Println("    /_/  |_|/_/  /_/  /_/ \\____//_/ /_/ \\__,_//_//_/ /_/ ")
+	fmt.Println("")
 
-	fmt.Println("    ___   ______ __  ___ ______ __            _ ")
-	fmt.Println("   /   | /_  __//  |/  // ____// /_   ____ _ (_)____ ")
-	fmt.Println("  / /| |  / /  / /|_/ // /    / __ \\ / __ `// // __ \\")
-	fmt.Println(" / ___ | / /  / /  / // /___ / / / // /_/ // / // / /")
-	fmt.Println("/_/  |_|/_/  /_/  /_/ \\____//_/ /_/ \\__,_//_//_/ /_/ ")
+	if err := app.Run(os.Args); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 }
 
 // atmapp is the main entry point into the system
