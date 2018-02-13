@@ -2,7 +2,7 @@ package clique
 
 import (
 	"../../common"
-	"../../core"
+	"../../core/types"
 	"../../db"
 	"../../params"
 	"bytes"
@@ -159,7 +159,7 @@ func (s *Snapshot) uncast(address common.Address, authorize bool) bool {
 
 // apply creates a new authorization snapshot by applying the given headers to
 // the original one.
-func (s *Snapshot) apply(headers []*core.Header) (*Snapshot, error) {
+func (s *Snapshot) apply(headers []*types.Header) (*Snapshot, error) {
 	// Allow passing in no headers for cleaner code
 	if len(headers) == 0 {
 		return s, nil

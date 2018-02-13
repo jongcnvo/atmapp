@@ -1,6 +1,7 @@
 package node
 
 import (
+	"../event"
 	"../log"
 	"../p2p"
 	"../rpc"
@@ -72,7 +73,7 @@ type ServiceConstructor func(ctx *ServiceContext) (Service, error)
 type ServiceContext struct {
 	config   *Config
 	services map[reflect.Type]Service // Index of the already constructed services
-	//EventMux       *event.TypeMux           // Event multiplexer used for decoupled notifications
+	EventMux *event.TypeMux           // Event multiplexer used for decoupled notifications
 	//AccountManager *accounts.Manager        // Account manager created by the node.
 }
 

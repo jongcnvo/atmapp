@@ -1,12 +1,13 @@
-package core
+package types
 
 import (
-	"../common"
-	"../crypto"
-	"../rlp"
-	"./trie"
+	"../../common"
+	"../../crypto"
+	"../../rlp"
+	"../trie"
 	"bytes"
 	"math/big"
+	"sort"
 	"sync/atomic"
 	"time"
 )
@@ -15,6 +16,13 @@ var (
 	EmptyRootHash  = DeriveSha(Transactions{})
 	EmptyUncleHash = CalcUncleHash(nil)
 )
+
+// A BlockNonce is a 64-bit hash which proves (combined with the
+// mix-hash) that a sufficient amount of computation has been carried
+// out on a block.
+type BlockNonce [8]byte
+
+type BlockBy func(b1, b2 *Block) bool
 
 // Header represents a block header in the blockchain.
 type Header struct {
@@ -74,6 +82,11 @@ type Block struct {
 	ReceivedAt   time.Time
 	ReceivedFrom interface{}
 }
+
+type Blocks []*Block
+
+func (b *Block) Uncles() []*Header          { return b.uncles }
+func (b *Block) Transactions() Transactions { return b.transactions }
 
 func CalcUncleHash(uncles []*Header) common.Hash {
 	return rlpHash(uncles)
@@ -156,6 +169,7 @@ func DeriveSha(list DerivableList) common.Hash {
 
 func (b *Block) Number() *big.Int  { return new(big.Int).Set(b.header.Number) }
 func (b *Block) NumberU64() uint64 { return b.header.Number.Uint64() }
+func (b *Block) Time() *big.Int    { return new(big.Int).Set(b.header.Time) }
 
 func (b *Block) Header() *Header { return CopyHeader(b.header) }
 
@@ -171,4 +185,64 @@ func (b *Block) Hash() common.Hash {
 	v := b.header.Hash()
 	b.hash.Store(v)
 	return v
+}
+
+func (b *Block) ParentHash() common.Hash { return b.header.ParentHash }
+func (b *Block) GasUsed() uint64         { return b.header.GasUsed }
+func (b *Block) Root() common.Hash       { return b.header.Root }
+func (b *Block) Difficulty() *big.Int    { return new(big.Int).Set(b.header.Difficulty) }
+func (b *Block) GasLimit() uint64        { return b.header.GasLimit }
+
+// NewBlockWithHeader creates a block with the given header data. The
+// header data is copied, changes to header and to the field values
+// will not affect the block.
+func NewBlockWithHeader(header *Header) *Block {
+	return &Block{header: CopyHeader(header)}
+}
+
+// WithBody returns a new block with the given transaction and uncle contents.
+func (b *Block) WithBody(transactions []*Transaction, uncles []*Header) *Block {
+	block := &Block{
+		header:       CopyHeader(b.header),
+		transactions: make([]*Transaction, len(transactions)),
+		uncles:       make([]*Header, len(uncles)),
+	}
+	copy(block.transactions, transactions)
+	for i := range uncles {
+		block.uncles[i] = CopyHeader(uncles[i])
+	}
+	return block
+}
+
+func Number(b1, b2 *Block) bool { return b1.header.Number.Cmp(b2.header.Number) < 0 }
+
+func (self BlockBy) Sort(blocks Blocks) {
+	bs := blockSorter{
+		blocks: blocks,
+		by:     self,
+	}
+	sort.Sort(bs)
+}
+
+func (self blockSorter) Len() int { return len(self.blocks) }
+func (self blockSorter) Swap(i, j int) {
+	self.blocks[i], self.blocks[j] = self.blocks[j], self.blocks[i]
+}
+func (self blockSorter) Less(i, j int) bool { return self.by(self.blocks[i], self.blocks[j]) }
+
+type blockSorter struct {
+	blocks Blocks
+	by     func(b1, b2 *Block) bool
+}
+
+// WithSeal returns a new block with the data from b but the header replaced with
+// the sealed one.
+func (b *Block) WithSeal(header *Header) *Block {
+	cpy := *header
+
+	return &Block{
+		header:       &cpy,
+		transactions: b.transactions,
+		uncles:       b.uncles,
+	}
 }

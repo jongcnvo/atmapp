@@ -1,9 +1,8 @@
-package core
+package types
 
 import (
-	"../common"
-	"../crypto"
-	"./types"
+	"../../common"
+	"../../crypto"
 	"math/big"
 )
 
@@ -16,7 +15,7 @@ func CreateBloom(receipts Receipts) common.Bloom {
 	return common.BytesToBloom(bin.Bytes())
 }
 
-func LogsBloom(logs []*types.Log) *big.Int {
+func LogsBloom(logs []*Log) *big.Int {
 	bin := new(big.Int)
 	for _, log := range logs {
 		bin.Or(bin, bloom9(log.Address.Bytes()))

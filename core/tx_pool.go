@@ -5,6 +5,7 @@ import (
 	"../event"
 	"../params"
 	"./state"
+	"./types"
 	"math/big"
 	"sync"
 	"time"
@@ -60,7 +61,7 @@ type TxPool struct {
 	scope        event.SubscriptionScope
 	chainHeadCh  chan ChainHeadEvent
 	chainHeadSub event.Subscription
-	signer       Signer
+	signer       types.Signer
 	mu           sync.RWMutex
 
 	currentState  *state.StateDB      // Current state in the blockchain head
@@ -73,7 +74,7 @@ type TxPool struct {
 	pending map[common.Address]*txList         // All currently processable transactions
 	queue   map[common.Address]*txList         // Queued but non-processable transactions
 	beats   map[common.Address]time.Time       // Last heartbeat from each known account
-	all     map[common.Hash]*Transaction // All transactions to allow lookups
+	all     map[common.Hash]*types.Transaction // All transactions to allow lookups
 	priced  *txPricedList                      // All transactions sorted by price
 
 	wg sync.WaitGroup // for shutdown sync
@@ -84,18 +85,18 @@ type TxPool struct {
 // blockChain provides the state of blockchain and current gas limit to do
 // some pre checks in tx pool and event subscribers.
 type blockChain interface {
-	CurrentBlock() *Block
-	GetBlock(hash common.Hash, number uint64) *Block
+	CurrentBlock() *types.Block
+	GetBlock(hash common.Hash, number uint64) *types.Block
 	StateAt(root common.Hash) (*state.StateDB, error)
 
 	SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Subscription
 }
 
-type ChainHeadEvent struct{ Block *Block }
+type ChainHeadEvent struct{ Block *types.Block }
 
 // accountSet is simply a set of addresses to check for existence, and a signer
 // capable of deriving addresses from transactions.
 type accountSet struct {
 	accounts map[common.Address]struct{}
-	signer   Signer
+	signer   types.Signer
 }

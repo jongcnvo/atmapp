@@ -1,9 +1,8 @@
-package core
+package types
 
 import (
-	"../common"
-	"../rlp"
-	"./types"
+	"../../common"
+	"../../rlp"
 )
 
 // Receipt represents the results of a transaction.
@@ -13,7 +12,7 @@ type Receipt struct {
 	Status            uint         `json:"status"`
 	CumulativeGasUsed uint64       `json:"cumulativeGasUsed" gencodec:"required"`
 	Bloom             common.Bloom `json:"logsBloom"         gencodec:"required"`
-	Logs              []*types.Log `json:"logs"              gencodec:"required"`
+	Logs              []*Log       `json:"logs"              gencodec:"required"`
 
 	// Implementation fields (don't reorder!)
 	TxHash          common.Hash    `json:"transactionHash" gencodec:"required"`

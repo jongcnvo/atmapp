@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"reflect"
 	"time"
 )
@@ -90,6 +91,8 @@ func BytesToAddress(b []byte) Address {
 	a.SetBytes(b)
 	return a
 }
+
+func BigToAddress(b *big.Int) Address { return BytesToAddress(b.Bytes()) }
 
 //HexToAddress set the address to the value of s
 func HexToAddress(s string) Address { return BytesToAddress(FromHex(s)) }

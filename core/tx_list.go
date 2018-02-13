@@ -2,6 +2,7 @@ package core
 
 import (
 	"../common"
+	"./types"
 	"math/big"
 )
 
@@ -12,9 +13,9 @@ type nonceHeap []uint64
 // txSortedMap is a nonce->transaction hash map with a heap based index to allow
 // iterating over the contents in a nonce-incrementing way.
 type txSortedMap struct {
-	items map[uint64]*Transaction // Hash map storing the transaction data
-	index *nonceHeap              // Heap of nonces of all the stored transactions (non-strict mode)
-	cache Transactions            // Cache of the transactions already sorted
+	items map[uint64]*types.Transaction // Hash map storing the transaction data
+	index *nonceHeap                    // Heap of nonces of all the stored transactions (non-strict mode)
+	cache types.Transactions            // Cache of the transactions already sorted
 }
 
 // txList is a "list" of transactions belonging to an account, sorted by account
@@ -31,12 +32,12 @@ type txList struct {
 
 // priceHeap is a heap.Interface implementation over transactions for retrieving
 // price-sorted transactions to discard when the pool fills up.
-type priceHeap []*Transaction
+type priceHeap []*types.Transaction
 
 // txPricedList is a price-sorted heap to allow operating on transactions pool
 // contents in a price-incrementing way.
 type txPricedList struct {
-	all    *map[common.Hash]*Transaction // Pointer to the map of all transactions
-	items  *priceHeap                    // Heap of prices of all the stored transactions
-	stales int                           // Number of stale price points to (re-heap trigger)
+	all    *map[common.Hash]*types.Transaction // Pointer to the map of all transactions
+	items  *priceHeap                          // Heap of prices of all the stored transactions
+	stales int                                 // Number of stale price points to (re-heap trigger)
 }

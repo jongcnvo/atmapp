@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"../atm"
+	"../node"
 	"../params"
 	"gopkg.in/urfave/cli.v1"
 	"os"
@@ -20,4 +22,16 @@ func NewApp(gitCommit, usage string) *cli.App {
 	}
 	app.Usage = usage
 	return app
+}
+
+// RegisterATMService adds an Ethereum client to the stack.
+func RegisterATMService(stack *node.Node, cfg *atm.Config) {
+	var err error
+	err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+		atm.New(ctx, cfg)
+		return nil, nil
+	})
+	if err != nil {
+		//Fatalf("Failed to register the ATM service: %v", err)
+	}
 }
