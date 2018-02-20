@@ -130,14 +130,14 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 
 // CreateDB creates the chain database.
 func CreateDB(ctx *node.ServiceContext, config *Config, name string) (db.Database, error) {
-	//db, err := ctx.OpenDatabase(name, config.DatabaseCache, config.DatabaseHandles)
-	//if err != nil {
-	//	return nil, err
-	//}
-	//if db, ok := db.(*ethdb.LDBDatabase); ok {
-	//	db.Meter("eth/db/chaindata/")
-	//}
-	return nil, nil
+	atmdb, err := ctx.OpenDatabase(name, config.DatabaseCache, config.DatabaseHandles)
+	if err != nil {
+		return nil, err
+	}
+	if atmdb, ok := atmdb.(*db.LDBDatabase); ok {
+		atmdb.Meter("atm/db/chaindata/")
+	}
+	return atmdb, nil
 }
 
 // CreateConsensusEngine creates the required type of consensus engine instance for an Ethereum service

@@ -1,6 +1,7 @@
 package node
 
 import (
+	"../db"
 	"../event"
 	"../log"
 	"../p2p"
@@ -76,6 +77,20 @@ type ServiceContext struct {
 	services map[reflect.Type]Service // Index of the already constructed services
 	EventMux *event.TypeMux           // Event multiplexer used for decoupled notifications
 	//AccountManager *accounts.Manager        // Account manager created by the node.
+}
+
+// OpenDatabase opens an existing database with the given name (or creates one
+// if no previous can be found) from within the node's data directory. If the
+// node is an ephemeral one, a memory database is returned.
+func (ctx *ServiceContext) OpenDatabase(name string, cache int, handles int) (db.Database, error) {
+	if ctx.config.DataDir == "" {
+		return db.NewMemDB()
+	}
+	db, err := db.NewLDBDatabase(ctx.config.resolvePath(name), cache, handles)
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
 }
 
 // Service is an individual protocol that can be registered into a node.
@@ -559,4 +574,14 @@ func (n *Node) stopWS() {
 		//n.wsHandler.Stop()
 		n.wsHandler = nil
 	}
+}
+
+// OpenDatabase opens an existing database with the given name (or creates one if no
+// previous can be found) from within the node's instance directory. If the node is
+// ephemeral, a memory database is returned.
+func (n *Node) OpenDatabase(name string, cache, handles int) (db.Database, error) {
+	if n.config.DataDir == "" {
+		return db.NewMemDB()
+	}
+	return db.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
 }
