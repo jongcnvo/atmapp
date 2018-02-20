@@ -7,7 +7,6 @@ import (
 	"../rpc"
 	"errors"
 	"fmt"
-	"github.com/prometheus/prometheus/util/flock"
 	"net"
 	"os"
 	"path/filepath"
@@ -15,6 +14,8 @@ import (
 	"strings"
 	"sync"
 	"syscall"
+
+	"github.com/prometheus/prometheus/util/flock"
 )
 
 var (
@@ -28,8 +29,8 @@ var (
 
 // Node is a container on which services can be registered.
 type Node struct {
-	//eventmux *event.TypeMux // Event multiplexer used between the services of a stack
-	config *Config
+	eventmux *event.TypeMux // Event multiplexer used between the services of a stack
+	config   *Config
 	//accman *accounts.Manager
 
 	ephemeralKeystore string         // if non-empty, the key directory that will be removed by Stop
@@ -146,8 +147,8 @@ func New(conf *Config) (*Node, error) {
 		ipcEndpoint:  conf.IPCEndpoint(),
 		httpEndpoint: conf.HTTPEndpoint(),
 		wsEndpoint:   conf.WSEndpoint(),
-		//eventmux:          new(event.TypeMux),
-		log: conf.Logger,
+		eventmux:     new(event.TypeMux),
+		log:          conf.Logger,
 	}, nil
 }
 

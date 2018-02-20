@@ -1,7 +1,7 @@
 package main
 
 import (
-	"../core"
+	"../atm"
 	"../log"
 	"../node"
 	"../utils"
@@ -64,17 +64,24 @@ func atmapp(ctx *cli.Context) error {
 }
 
 func makeFullNode(ctx *cli.Context) *node.Node {
-
 	// Load defaults.
 	cfg := ATMConfig{
-		ATM:  core.DefaultConfig,
+		ATM:  atm.DefaultConfig,
 		Node: DefaultNodeConfig(),
 	}
 
+	// Create node instance
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		return nil
 	}
+
+	// Register ATMChain service
+	err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
+		fullNode, err := atm.New(ctx, &cfg.ATM)
+		return fullNode, err
+	})
+
 	return stack
 }
 

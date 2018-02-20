@@ -1,7 +1,7 @@
 package main
 
 import (
-	"../core"
+	"../atm"
 	"../node"
 	"../p2p"
 	"../p2p/nat"
@@ -62,7 +62,7 @@ var DefaultConfig = node.Config{
 }
 
 type ATMConfig struct {
-	ATM  core.Config
+	ATM  atm.Config
 	Node node.Config
 }
 

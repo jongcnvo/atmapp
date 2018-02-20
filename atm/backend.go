@@ -11,7 +11,9 @@ import (
 	"../event"
 	"../log"
 	"../node"
+	"../p2p"
 	"../params"
+	"../rpc"
 	"fmt"
 	"math/big"
 	"sync"
@@ -144,5 +146,114 @@ func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainCo
 	if chainConfig.Clique != nil {
 		return clique.New(chainConfig.Clique, db)
 	}
+	return nil
+}
+
+// APIs returns the collection of RPC services the ATM package offers.
+// NOTE, some of these services probably need to be moved to somewhere else.
+func (s *ATM) APIs() []rpc.API {
+	//apis := ethapi.GetAPIs(s.ApiBackend)
+
+	// Append any APIs exposed explicitly by the consensus engine
+	//apis = append(apis, s.engine.APIs(s.BlockChain())...)
+
+	// Append all the local APIs and return
+	/*return append(apis, []rpc.API{
+		{
+			Namespace: "eth",
+			Version:   "1.0",
+			Service:   NewPublicATMAPI(s),
+			Public:    true,
+		}, {
+			Namespace: "eth",
+			Version:   "1.0",
+			Service:   NewPublicMinerAPI(s),
+			Public:    true,
+		}, {
+			Namespace: "eth",
+			Version:   "1.0",
+			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
+			Public:    true,
+		}, {
+			Namespace: "miner",
+			Version:   "1.0",
+			Service:   NewPrivateMinerAPI(s),
+			Public:    false,
+		}, {
+			Namespace: "eth",
+			Version:   "1.0",
+			Service:   filters.NewPublicFilterAPI(s.ApiBackend, false),
+			Public:    true,
+		}, {
+			Namespace: "admin",
+			Version:   "1.0",
+			Service:   NewPrivateAdminAPI(s),
+		}, {
+			Namespace: "debug",
+			Version:   "1.0",
+			Service:   NewPublicDebugAPI(s),
+			Public:    true,
+		}, {
+			Namespace: "debug",
+			Version:   "1.0",
+			Service:   NewPrivateDebugAPI(s.chainConfig, s),
+		}, {
+			Namespace: "net",
+			Version:   "1.0",
+			Service:   s.netRPCService,
+			Public:    true,
+		},
+	}...)
+	*/
+	return nil
+}
+
+// Protocols implements node.Service, returning all the currently configured
+// network protocols to start.
+func (s *ATM) Protocols() []p2p.Protocol {
+	return s.protocolManager.SubProtocols
+}
+
+// Start implements node.Service, starting all internal goroutines needed by the
+// protocol implementation.
+func (s *ATM) Start(srvr *p2p.Server) error {
+	// Start the bloom bits servicing goroutines
+	//s.startBloomHandlers()
+
+	// Start the RPC service
+	//s.netRPCService = ethapi.NewPublicNetAPI(srvr, s.NetVersion())
+
+	// Figure out a max peers count based on the server limits
+	/*maxPeers := srvr.MaxPeers
+	if s.config.LightServ > 0 {
+		maxPeers -= s.config.LightPeers
+		if maxPeers < srvr.MaxPeers/2 {
+			maxPeers = srvr.MaxPeers / 2
+		}
+	}*/
+	// Start the networking layer and the light server if requested
+	//s.protocolManager.Start(maxPeers)
+	return nil
+}
+
+// Stop implements node.Service, terminating all internal goroutines used by the
+// protocol.
+func (s *ATM) Stop() error {
+	/*if s.stopDbUpgrade != nil {
+		s.stopDbUpgrade()
+	}
+	s.bloomIndexer.Close()
+	s.blockchain.Stop()
+	s.protocolManager.Stop()
+	if s.lesServer != nil {
+		s.lesServer.Stop()
+	}
+	s.txPool.Stop()
+	s.miner.Stop()
+	s.eventMux.Stop()
+
+	s.chainDb.Close()
+	close(s.shutdownChan)*/
+
 	return nil
 }
