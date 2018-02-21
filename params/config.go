@@ -38,6 +38,10 @@ var (
 	// MainnetChainConfig is the chain parameters to run a node on the main network.
 	MainnetChainConfig = &ChainConfig{
 		ChainId: big.NewInt(1),
+		Clique: &CliqueConfig{
+			Period: 1,
+			Epoch:  30000,
+		},
 	}
 
 	// AllProtocolChanges contains every protocol change (EIPs) introduced
@@ -45,7 +49,12 @@ var (
 	//
 	// This configuration is intentionally not using keyed fields to force anyone
 	// adding flags to the config to also have to set these fields.
-	AllProtocolChanges = &ChainConfig{big.NewInt(1337), nil}
+	AllProtocolChanges = &ChainConfig{
+		ChainId: big.NewInt(1337),
+		Clique: &CliqueConfig{
+			Period: 1,
+			Epoch:  30000,
+		}}
 )
 
 // ConfigCompatError is raised if the locally-stored blockchain is initialised with a
