@@ -74,6 +74,9 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 		return nil
 	}
 
+	// Set config from command line
+	utils.SetATMConfig(ctx, stack, &cfg.ATM)
+
 	// Register ATMChain service
 	err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
 		fullNode, err := atm.New(ctx, &cfg.ATM)

@@ -84,7 +84,7 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 		//bloomIndexer:  NewBloomIndexer(chainDb, params.BloomBitsBlocks),
 	}
 
-	log.Info("Initialising Ethereum protocol", "versions", ProtocolVersions, "network", config.NetworkId)
+	log.Info("Initialising ATMChain protocol", "versions", ProtocolVersions, "network", config.NetworkId)
 
 	if !config.SkipBcVersionCheck {
 		bcVersion := core.GetBlockChainVersion(chainDb)
