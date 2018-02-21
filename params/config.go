@@ -100,3 +100,23 @@ const (
 	Einstein = 1e21
 	Douglas  = 1e42
 )
+
+// String implements the stringer interface, returning the consensus engine details.
+func (c *CliqueConfig) String() string {
+	return "clique"
+}
+
+// String implements the fmt.Stringer interface.
+func (c *ChainConfig) String() string {
+	var engine interface{}
+	switch {
+	case c.Clique != nil:
+		engine = c.Clique
+	default:
+		engine = "unknown"
+	}
+	return fmt.Sprintf("{ChainID: %v Engine: %v}",
+		c.ChainId,
+		engine,
+	)
+}
