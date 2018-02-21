@@ -23,6 +23,10 @@ var (
 	emptyState common.Hash
 )
 
+func init() {
+	crypto.NewKeccak256().Sum(emptyState[:0])
+}
+
 type (
 	fullNode struct {
 		Children [17]node // Actual trie node data to encode/decode (needs custom encoder)

@@ -56,7 +56,7 @@ type ATM struct {
 }
 
 // New creates a new Ethereum object (including the
-// initialisation of the common Ethereum object)
+// initialisation of the common ATMChain object)
 func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 	chainDb, err := CreateDB(ctx, config, "chaindata")
 	if err != nil {
@@ -69,7 +69,7 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 	}
 	log.Info("Initialised chain configuration", "config", chainConfig)
 
-	eth := &ATM{
+	atm := &ATM{
 		config:      config,
 		chainDb:     chainDb,
 		chainConfig: chainConfig,
@@ -95,14 +95,14 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 	}
 
 	vmConfig := vm.Config{EnablePreimageRecording: config.EnablePreimageRecording}
-	eth.blockchain, err = core.NewBlockChain(chainDb, eth.chainConfig, eth.engine, vmConfig)
+	atm.blockchain, err = core.NewBlockChain(chainDb, atm.chainConfig, atm.engine, vmConfig)
 	if err != nil {
 		return nil, err
 	}
 	// Rewind the chain in case of an incompatible config upgrade.
 	if compat, ok := genesisErr.(*params.ConfigCompatError); ok {
 		log.Warn("Rewinding chain to upgrade configuration", "err", compat)
-		eth.blockchain.SetHead(compat.RewindTo)
+		atm.blockchain.SetHead(compat.RewindTo)
 		core.WriteChainConfig(chainDb, genesisHash, chainConfig)
 	}
 	//eth.bloomIndexer.Start(eth.blockchain)
@@ -125,7 +125,7 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 	}
 	//eth.ApiBackend.gpo = gasprice.NewOracle(eth.ApiBackend, gpoParams)
 
-	return eth, nil
+	return atm, nil
 }
 
 // CreateDB creates the chain database.

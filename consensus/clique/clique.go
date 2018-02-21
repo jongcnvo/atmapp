@@ -164,7 +164,7 @@ type Clique struct {
 
 // New creates a Clique proof-of-authority consensus engine with the initial
 // signers set to the ones provided by the user.
-func New(config *params.CliqueConfig, db db.Database) *Clique {
+func New(config *params.CliqueConfig, atmdb db.Database) *Clique {
 	// Set any missing consensus parameters to their defaults
 	conf := *config
 	if conf.Epoch == 0 {
@@ -176,7 +176,7 @@ func New(config *params.CliqueConfig, db db.Database) *Clique {
 
 	return &Clique{
 		config:     &conf,
-		db:         db,
+		db:         atmdb,
 		recents:    recents,
 		signatures: signatures,
 		proposals:  make(map[common.Address]bool),

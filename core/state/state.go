@@ -262,9 +262,9 @@ func New(root common.Hash, db Database) (*StateDB, error) {
 
 // NewDatabase creates a backing store for state. The returned database is safe for
 // concurrent use and retains cached trie nodes in memory.
-func NewDatabase(db db.Database) Database {
+func NewDatabase(atmdb db.Database) Database {
 	csc, _ := lru.New(codeSizeCacheSize)
-	return &cachingDB{db: db, codeSizeCache: csc}
+	return &cachingDB{db: atmdb, codeSizeCache: csc}
 }
 
 // AddBalance adds amount to the account associated with addr
