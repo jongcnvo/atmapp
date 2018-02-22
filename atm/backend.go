@@ -89,7 +89,7 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 	if !config.SkipBcVersionCheck {
 		bcVersion := core.GetBlockChainVersion(chainDb)
 		if bcVersion != core.BlockChainVersion && bcVersion != 0 {
-			return nil, fmt.Errorf("Blockchain DB version mismatch (%d / %d). Run geth upgradedb.\n", bcVersion, core.BlockChainVersion)
+			return nil, fmt.Errorf("Blockchain DB version mismatch (%d / %d). Run atmapp upgradedb.\n", bcVersion, core.BlockChainVersion)
 		}
 		core.WriteBlockChainVersion(chainDb, core.BlockChainVersion)
 	}
@@ -107,10 +107,10 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 	}
 	//eth.bloomIndexer.Start(eth.blockchain)
 
-	//if config.TxPool.Journal != "" {
-	//	config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
-	//}
-	//eth.txPool = core.NewTxPool(config.TxPool, eth.chainConfig, eth.blockchain)
+	if config.TxPool.Journal != "" {
+		config.TxPool.Journal = ctx.ResolvePath(config.TxPool.Journal)
+	}
+	atm.txPool = core.NewTxPool(config.TxPool, atm.chainConfig, atm.blockchain)
 
 	//if eth.protocolManager, err = NewProtocolManager(eth.chainConfig, config.SyncMode, //config.NetworkId, eth.eventMux, eth.txPool, eth.engine, eth.blockchain, chainDb); //err != nil {
 	//	return nil, err

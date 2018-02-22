@@ -912,3 +912,22 @@ func (bc *BlockChain) reorg(oldBlock, newBlock *types.Block) error {
 
 	return nil
 }
+
+// CurrentBlock retrieves the current head block of the canonical chain. The
+// block is retrieved from the blockchain's internal cache.
+func (bc *BlockChain) CurrentBlock() *types.Block {
+	bc.mu.RLock()
+	defer bc.mu.RUnlock()
+
+	return bc.currentBlock
+}
+
+// StateAt returns a new mutable state based on a particular point in time.
+func (bc *BlockChain) StateAt(root common.Hash) (*state.StateDB, error) {
+	return state.New(root, bc.stateCache)
+}
+
+// SubscribeChainHeadEvent registers a subscription of ChainHeadEvent.
+func (bc *BlockChain) SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Subscription {
+	return bc.scope.Track(bc.chainHeadFeed.Subscribe(ch))
+}

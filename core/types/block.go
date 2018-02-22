@@ -193,6 +193,13 @@ func (b *Block) Root() common.Hash       { return b.header.Root }
 func (b *Block) Difficulty() *big.Int    { return new(big.Int).Set(b.header.Difficulty) }
 func (b *Block) GasLimit() uint64        { return b.header.GasLimit }
 
+type writeCounter common.StorageSize
+
+func (c *writeCounter) Write(b []byte) (int, error) {
+	*c += writeCounter(len(b))
+	return len(b), nil
+}
+
 // NewBlockWithHeader creates a block with the given header data. The
 // header data is copied, changes to header and to the field values
 // will not affect the block.

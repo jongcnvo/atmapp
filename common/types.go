@@ -22,6 +22,33 @@ const (
 	AddressLength = 20
 )
 
+// Common big integers often used
+var (
+	Big1   = big.NewInt(1)
+	Big2   = big.NewInt(2)
+	Big3   = big.NewInt(3)
+	Big0   = big.NewInt(0)
+	Big32  = big.NewInt(32)
+	Big256 = big.NewInt(0xff)
+	Big257 = big.NewInt(257)
+)
+
+type StorageSize float64
+
+func (self StorageSize) String() string {
+	if self > 1000000 {
+		return fmt.Sprintf("%.2f mB", self/1000000)
+	} else if self > 1000 {
+		return fmt.Sprintf("%.2f kB", self/1000)
+	} else {
+		return fmt.Sprintf("%.2f B", self)
+	}
+}
+
+func (self StorageSize) Int64() int64 {
+	return int64(self)
+}
+
 // Hash represents the 32 byte Keccak256 hash of arbitrary data.
 type Hash [HashLength]byte
 

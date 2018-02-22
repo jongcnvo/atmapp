@@ -79,6 +79,13 @@ type ServiceContext struct {
 	//AccountManager *accounts.Manager        // Account manager created by the node.
 }
 
+// ResolvePath resolves a user path into the data directory if that was relative
+// and if the user actually uses persistent storage. It will return an empty string
+// for emphemeral storage and the user's own input for absolute paths.
+func (ctx *ServiceContext) ResolvePath(path string) string {
+	return ctx.config.resolvePath(path)
+}
+
 // OpenDatabase opens an existing database with the given name (or creates one
 // if no previous can be found) from within the node's data directory. If the
 // node is an ephemeral one, a memory database is returned.

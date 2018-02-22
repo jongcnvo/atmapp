@@ -229,9 +229,58 @@ func (self *StateDB) setError(err error) {
 	}
 }
 
+// Copy creates a deep, independent copy of the state.
+// Snapshots of the copied state cannot be applied to the copy.
+func (self *StateDB) Copy() *StateDB {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	// Copy all the basic fields, initialize the memory ones
+	state := &StateDB{
+		db:                self.db,
+		trie:              self.db.CopyTrie(self.trie),
+		stateObjects:      make(map[common.Address]*stateObject, len(self.stateObjectsDirty)),
+		stateObjectsDirty: make(map[common.Address]struct{}, len(self.stateObjectsDirty)),
+		refund:            self.refund,
+		logs:              make(map[common.Hash][]*types.Log, len(self.logs)),
+		logSize:           self.logSize,
+		preimages:         make(map[common.Hash][]byte),
+	}
+	// Copy the dirty states, logs, and preimages
+	for addr := range self.stateObjectsDirty {
+		state.stateObjects[addr] = self.stateObjects[addr].deepCopy(state, state.MarkStateObjectDirty)
+		state.stateObjectsDirty[addr] = struct{}{}
+	}
+	for hash, logs := range self.logs {
+		state.logs[hash] = make([]*types.Log, len(logs))
+		copy(state.logs[hash], logs)
+	}
+	for hash, preimage := range self.preimages {
+		state.preimages[hash] = preimage
+	}
+	return state
+}
+
 type Code []byte
 
 type Storage map[common.Hash]common.Hash
+
+func (self Storage) String() (str string) {
+	for key, value := range self {
+		str += fmt.Sprintf("%X : %X\n", key, value)
+	}
+
+	return
+}
+
+func (self Storage) Copy() Storage {
+	cpy := make(Storage)
+	for key, value := range self {
+		cpy[key] = value
+	}
+
+	return cpy
+}
 
 type journalEntry interface {
 	undo(*StateDB)
@@ -391,6 +440,24 @@ func (self *StateDB) updateStateObject(stateObject *stateObject) {
 		panic(fmt.Errorf("can't encode object at %x: %v", addr[:], err))
 	}
 	self.setError(self.trie.TryUpdate(addr[:], data))
+}
+
+func (self *StateDB) GetNonce(addr common.Address) uint64 {
+	stateObject := self.getStateObject(addr)
+	if stateObject != nil {
+		return stateObject.Nonce()
+	}
+
+	return 0
+}
+
+// Retrieve the balance from the given address or 0 if object not found
+func (self *StateDB) GetBalance(addr common.Address) *big.Int {
+	stateObject := self.getStateObject(addr)
+	if stateObject != nil {
+		return stateObject.Balance()
+	}
+	return common.Big0
 }
 
 type cachingDB struct {
@@ -702,4 +769,22 @@ func (self *stateObject) CodeHash() []byte {
 func (self *stateObject) updateRoot(db Database) {
 	self.updateTrie(db)
 	self.data.Root = self.trie.Hash()
+}
+
+func (self *stateObject) deepCopy(db *StateDB, onDirty func(addr common.Address)) *stateObject {
+	stateObject := newObject(db, self.address, self.data, onDirty)
+	if self.trie != nil {
+		stateObject.trie = db.db.CopyTrie(self.trie)
+	}
+	stateObject.code = self.code
+	stateObject.dirtyStorage = self.dirtyStorage.Copy()
+	stateObject.cachedStorage = self.dirtyStorage.Copy()
+	stateObject.suicided = self.suicided
+	stateObject.dirtyCode = self.dirtyCode
+	stateObject.deleted = self.deleted
+	return stateObject
+}
+
+func (self *stateObject) Nonce() uint64 {
+	return self.data.Nonce
 }
