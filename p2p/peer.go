@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net"
 	"sort"
 	"sync"
 	"time"
@@ -142,6 +143,16 @@ func (p *Peer) ID() discover.NodeID {
 	return p.rw.id
 }
 
+// RemoteAddr returns the remote address of the network connection.
+func (p *Peer) RemoteAddr() net.Addr {
+	return p.rw.fd.RemoteAddr()
+}
+
+// LocalAddr returns the local address of the network connection.
+func (p *Peer) LocalAddr() net.Addr {
+	return p.rw.fd.LocalAddr()
+}
+
 // Disconnect terminates the peer connection with the given reason.
 // It returns immediately and does not wait until the connection is closed.
 func (p *Peer) Disconnect(reason DiscReason) {
@@ -264,10 +275,25 @@ func (p *Peer) handle(msg Msg) error {
 	return nil
 }
 
+func (p *Peer) Log() log.Logger {
+	return p.log
+}
+
+// Name returns the node name that the remote node advertised.
+func (p *Peer) Name() string {
+	return p.rw.name
+}
+
 // Discard reads any remaining payload data into a black hole.
 func (msg Msg) Discard() error {
 	_, err := io.Copy(ioutil.Discard, msg.Payload)
 	return err
+}
+
+// Caps returns the capabilities (supported subprotocols) of the remote peer.
+func (p *Peer) Caps() []Cap {
+	// TODO: maybe return copy
+	return p.rw.caps
 }
 
 func newPeer(conn *conn, protocols []Protocol) *Peer {
@@ -379,4 +405,50 @@ func countMatchingProtocols(protocols []Protocol, caps []Cap) int {
 		}
 	}
 	return n
+}
+
+// PeerInfo represents a short summary of the information known about a connected
+// peer. Sub-protocol independent fields are contained and initialized here, with
+// protocol specifics delegated to all connected sub-protocols.
+type PeerInfo struct {
+	ID      string   `json:"id"`   // Unique node identifier (also the encryption key)
+	Name    string   `json:"name"` // Name of the node, including client type, version, OS, custom data
+	Caps    []string `json:"caps"` // Sum-protocols advertised by this particular peer
+	Network struct {
+		LocalAddress  string `json:"localAddress"`  // Local endpoint of the TCP data connection
+		RemoteAddress string `json:"remoteAddress"` // Remote endpoint of the TCP data connection
+	} `json:"network"`
+	Protocols map[string]interface{} `json:"protocols"` // Sub-protocol specific metadata fields
+}
+
+// Info gathers and returns a collection of metadata known about a peer.
+func (p *Peer) Info() *PeerInfo {
+	// Gather the protocol capabilities
+	var caps []string
+	for _, cap := range p.Caps() {
+		caps = append(caps, cap.String())
+	}
+	// Assemble the generic peer metadata
+	info := &PeerInfo{
+		ID:        p.ID().String(),
+		Name:      p.Name(),
+		Caps:      caps,
+		Protocols: make(map[string]interface{}),
+	}
+	info.Network.LocalAddress = p.LocalAddr().String()
+	info.Network.RemoteAddress = p.RemoteAddr().String()
+
+	// Gather all the running protocol infos
+	for _, proto := range p.running {
+		protoInfo := interface{}("unknown")
+		if query := proto.Protocol.PeerInfo; query != nil {
+			if metadata := query(p.ID()); metadata != nil {
+				protoInfo = metadata
+			} else {
+				protoInfo = "handshake"
+			}
+		}
+		info.Protocols[proto.Name] = protoInfo
+	}
+	return info
 }

@@ -273,6 +273,20 @@ func (pool *TxPool) AddLocal(tx *types.Transaction) error {
 	return pool.addTx(tx, !pool.config.NoLocals)
 }
 
+// AddRemote enqueues a single transaction into the pool if it is valid. If the
+// sender is not among the locally tracked ones, full pricing constraints will
+// apply.
+func (pool *TxPool) AddRemote(tx *types.Transaction) error {
+	return pool.addTx(tx, false)
+}
+
+// AddRemotes enqueues a batch of transactions into the pool if they are valid.
+// If the senders are not among the locally tracked ones, full pricing constraints
+// will apply.
+func (pool *TxPool) AddRemotes(txs []*types.Transaction) []error {
+	return pool.addTxs(txs, false)
+}
+
 // addTx enqueues a single transaction into the pool if it is valid.
 func (pool *TxPool) addTx(tx *types.Transaction, local bool) error {
 	pool.mu.Lock()
@@ -289,6 +303,14 @@ func (pool *TxPool) addTx(tx *types.Transaction, local bool) error {
 		pool.promoteExecutables([]common.Address{from})
 	}
 	return nil
+}
+
+// addTxs attempts to queue a batch of transactions if they are valid.
+func (pool *TxPool) addTxs(txs []*types.Transaction, local bool) []error {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
+
+	return pool.addTxsLocked(txs, local)
 }
 
 // removeTx removes a single transaction from the queue, moving all subsequent
@@ -862,6 +884,26 @@ func (pool *TxPool) demoteUnexecutables() {
 			delete(pool.beats, addr)
 		}
 	}
+}
+
+// Pending retrieves all currently processable transactions, groupped by origin
+// account and sorted by nonce. The returned transaction set is a copy and can be
+// freely modified by calling code.
+func (pool *TxPool) Pending() (map[common.Address]types.Transactions, error) {
+	pool.mu.Lock()
+	defer pool.mu.Unlock()
+
+	pending := make(map[common.Address]types.Transactions)
+	for addr, list := range pool.pending {
+		pending[addr] = list.Flatten()
+	}
+	return pending, nil
+}
+
+// SubscribeTxPreEvent registers a subscription of TxPreEvent and
+// starts sending event to the given channel.
+func (pool *TxPool) SubscribeTxPreEvent(ch chan<- TxPreEvent) event.Subscription {
+	return pool.scope.Track(pool.txFeed.Subscribe(ch))
 }
 
 // DefaultTxPoolConfig contains the default configurations for the transaction

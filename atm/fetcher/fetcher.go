@@ -3,9 +3,15 @@ package fetcher
 import (
 	"../../common"
 	"../../core/types"
+	"../../log"
+	"errors"
 	"time"
 
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
+)
+
+var (
+	errTerminated = errors.New("terminated")
 )
 
 // headerRequesterFn is a callback type for sending a header retrieval request.
@@ -108,4 +114,93 @@ type Fetcher struct {
 	fetchingHook       func([]common.Hash)     // Method to call upon starting a block (eth/61) or header (eth/62) fetch
 	completingHook     func([]common.Hash)     // Method to call upon starting a block body fetch (eth/62)
 	importedHook       func(*types.Block)      // Method to call upon successful block import (both eth/61 and eth/62)
+}
+
+// New creates a block fetcher to retrieve blocks based on hash announcements.
+func New(getBlock blockRetrievalFn, verifyHeader headerVerifierFn, broadcastBlock blockBroadcasterFn, chainHeight chainHeightFn, insertChain chainInsertFn, dropPeer peerDropFn) *Fetcher {
+	return &Fetcher{
+		notify:         make(chan *announce),
+		inject:         make(chan *inject),
+		blockFilter:    make(chan chan []*types.Block),
+		headerFilter:   make(chan chan *headerFilterTask),
+		bodyFilter:     make(chan chan *bodyFilterTask),
+		done:           make(chan common.Hash),
+		quit:           make(chan struct{}),
+		announces:      make(map[string]int),
+		announced:      make(map[common.Hash][]*announce),
+		fetching:       make(map[common.Hash]*announce),
+		fetched:        make(map[common.Hash][]*announce),
+		completing:     make(map[common.Hash]*announce),
+		queue:          prque.New(),
+		queues:         make(map[string]int),
+		queued:         make(map[common.Hash]*inject),
+		getBlock:       getBlock,
+		verifyHeader:   verifyHeader,
+		broadcastBlock: broadcastBlock,
+		chainHeight:    chainHeight,
+		insertChain:    insertChain,
+		dropPeer:       dropPeer,
+	}
+}
+
+// FilterBodies extracts all the block bodies that were explicitly requested by
+// the fetcher, returning those that should be handled differently.
+func (f *Fetcher) FilterBodies(peer string, transactions [][]*types.Transaction, uncles [][]*types.Header, time time.Time) ([][]*types.Transaction, [][]*types.Header) {
+	log.Trace("Filtering bodies", "peer", peer, "txs", len(transactions), "uncles", len(uncles))
+
+	// Send the filter channel to the fetcher
+	filter := make(chan *bodyFilterTask)
+
+	select {
+	case f.bodyFilter <- filter:
+	case <-f.quit:
+		return nil, nil
+	}
+	// Request the filtering of the body list
+	select {
+	case filter <- &bodyFilterTask{peer: peer, transactions: transactions, uncles: uncles, time: time}:
+	case <-f.quit:
+		return nil, nil
+	}
+	// Retrieve the bodies remaining after filtering
+	select {
+	case task := <-filter:
+		return task.transactions, task.uncles
+	case <-f.quit:
+		return nil, nil
+	}
+}
+
+// Notify announces the fetcher of the potential availability of a new block in
+// the network.
+func (f *Fetcher) Notify(peer string, hash common.Hash, number uint64, time time.Time,
+	headerFetcher headerRequesterFn, bodyFetcher bodyRequesterFn) error {
+	block := &announce{
+		hash:        hash,
+		number:      number,
+		time:        time,
+		origin:      peer,
+		fetchHeader: headerFetcher,
+		fetchBodies: bodyFetcher,
+	}
+	select {
+	case f.notify <- block:
+		return nil
+	case <-f.quit:
+		return errTerminated
+	}
+}
+
+// Enqueue tries to fill gaps the the fetcher's future import queue.
+func (f *Fetcher) Enqueue(peer string, block *types.Block) error {
+	op := &inject{
+		origin: peer,
+		block:  block,
+	}
+	select {
+	case f.inject <- op:
+		return nil
+	case <-f.quit:
+		return errTerminated
+	}
 }

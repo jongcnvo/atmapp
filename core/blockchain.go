@@ -3,11 +3,14 @@ package core
 import (
 	"../common"
 	"../consensus"
+	"../crypto"
 	"../db"
 	"../event"
 	"../log"
 	"../params"
+	"../rlp"
 	"./state"
+	"./trie"
 	"./types"
 	"./vm"
 	"errors"
@@ -922,6 +925,24 @@ func (bc *BlockChain) CurrentBlock() *types.Block {
 	return bc.currentBlock
 }
 
+// CurrentFastBlock retrieves the current fast-sync head block of the canonical
+// chain. The block is retrieved from the blockchain's internal cache.
+func (bc *BlockChain) CurrentFastBlock() *types.Block {
+	bc.mu.RLock()
+	defer bc.mu.RUnlock()
+
+	return bc.currentFastBlock
+}
+
+// Status returns status information about the current chain such as the HEAD Td,
+// the HEAD hash and the hash of the genesis block.
+func (bc *BlockChain) Status() (td *big.Int, currentBlock common.Hash, genesisBlock common.Hash) {
+	bc.mu.RLock()
+	defer bc.mu.RUnlock()
+
+	return bc.GetTd(bc.currentBlock.Hash(), bc.currentBlock.NumberU64()), bc.currentBlock.Hash(), bc.genesisBlock.Hash()
+}
+
 // StateAt returns a new mutable state based on a particular point in time.
 func (bc *BlockChain) StateAt(root common.Hash) (*state.StateDB, error) {
 	return state.New(root, bc.stateCache)
@@ -930,4 +951,251 @@ func (bc *BlockChain) StateAt(root common.Hash) (*state.StateDB, error) {
 // SubscribeChainHeadEvent registers a subscription of ChainHeadEvent.
 func (bc *BlockChain) SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Subscription {
 	return bc.scope.Track(bc.chainHeadFeed.Subscribe(ch))
+}
+
+// GetBlockHashesFromHash retrieves a number of block hashes starting at a given
+// hash, fetching towards the genesis block.
+func (bc *BlockChain) GetBlockHashesFromHash(hash common.Hash, max uint64) []common.Hash {
+	return bc.hc.GetBlockHashesFromHash(hash, max)
+}
+
+// FastSyncCommitHead sets the current head block to the one defined by the hash
+// irrelevant what the chain contents were prior.
+func (bc *BlockChain) FastSyncCommitHead(hash common.Hash) error {
+	// Make sure that both the block as well at its state trie exists
+	block := bc.GetBlockByHash(hash)
+	if block == nil {
+		return fmt.Errorf("non existent block [%x…]", hash[:4])
+	}
+	if _, err := trie.NewSecure(block.Root(), bc.chainDb, 0); err != nil {
+		return err
+	}
+	// If all checks out, manually set the head block
+	bc.mu.Lock()
+	bc.currentBlock = block
+	bc.mu.Unlock()
+
+	log.Info("Committed new head block", "number", block.Number(), "hash", hash)
+	return nil
+}
+
+// SetReceiptsData computes all the non-consensus fields of the receipts
+func SetReceiptsData(config *params.ChainConfig, block *types.Block, receipts types.Receipts) {
+	signer := types.MakeSigner(config, block.Number())
+
+	transactions, logIndex := block.Transactions(), uint(0)
+
+	for j := 0; j < len(receipts); j++ {
+		// The transaction hash can be retrieved from the transaction itself
+		receipts[j].TxHash = transactions[j].Hash()
+
+		// The contract address can be derived from the transaction itself
+		if transactions[j].To() == nil {
+			// Deriving the signer is expensive, only do if it's actually needed
+			from, _ := types.Sender(signer, transactions[j])
+			receipts[j].ContractAddress = crypto.CreateAddress(from, transactions[j].Nonce())
+		}
+		// The used gas can be calculated based on previous receipts
+		if j == 0 {
+			receipts[j].GasUsed = receipts[j].CumulativeGasUsed
+		} else {
+			receipts[j].GasUsed = receipts[j].CumulativeGasUsed - receipts[j-1].CumulativeGasUsed
+		}
+		// The derived log fields can simply be set from the block and transaction
+		for k := 0; k < len(receipts[j].Logs); k++ {
+			receipts[j].Logs[k].BlockNumber = block.NumberU64()
+			receipts[j].Logs[k].BlockHash = block.Hash()
+			receipts[j].Logs[k].TxHash = receipts[j].TxHash
+			receipts[j].Logs[k].TxIndex = uint(j)
+			receipts[j].Logs[k].Index = logIndex
+			logIndex++
+		}
+	}
+}
+
+// InsertReceiptChain attempts to complete an already existing header chain with
+// transaction and receipt data.
+func (bc *BlockChain) InsertReceiptChain(blockChain types.Blocks, receiptChain []types.Receipts) (int, error) {
+	bc.wg.Add(1)
+	defer bc.wg.Done()
+
+	// Do a sanity check that the provided chain is actually ordered and linked
+	for i := 1; i < len(blockChain); i++ {
+		if blockChain[i].NumberU64() != blockChain[i-1].NumberU64()+1 || blockChain[i].ParentHash() != blockChain[i-1].Hash() {
+			log.Error("Non contiguous receipt insert", "number", blockChain[i].Number(), "hash", blockChain[i].Hash(), "parent", blockChain[i].ParentHash(),
+				"prevnumber", blockChain[i-1].Number(), "prevhash", blockChain[i-1].Hash())
+			return 0, fmt.Errorf("non contiguous insert: item %d is #%d [%x…], item %d is #%d [%x…] (parent [%x…])", i-1, blockChain[i-1].NumberU64(),
+				blockChain[i-1].Hash().Bytes()[:4], i, blockChain[i].NumberU64(), blockChain[i].Hash().Bytes()[:4], blockChain[i].ParentHash().Bytes()[:4])
+		}
+	}
+
+	var (
+		stats = struct{ processed, ignored int32 }{}
+		start = time.Now()
+		bytes = 0
+		batch = bc.chainDb.NewBatch()
+	)
+	for i, block := range blockChain {
+		receipts := receiptChain[i]
+		// Short circuit insertion if shutting down or processing failed
+		if atomic.LoadInt32(&bc.procInterrupt) == 1 {
+			return 0, nil
+		}
+		// Short circuit if the owner header is unknown
+		if !bc.HasHeader(block.Hash(), block.NumberU64()) {
+			return i, fmt.Errorf("containing header #%d [%x…] unknown", block.Number(), block.Hash().Bytes()[:4])
+		}
+		// Skip if the entire data is already known
+		if bc.HasBlock(block.Hash(), block.NumberU64()) {
+			stats.ignored++
+			continue
+		}
+		// Compute all the non-consensus fields of the receipts
+		SetReceiptsData(bc.config, block, receipts)
+		// Write all the data out into the database
+		if err := WriteBody(batch, block.Hash(), block.NumberU64(), block.Body()); err != nil {
+			return i, fmt.Errorf("failed to write block body: %v", err)
+		}
+		if err := WriteBlockReceipts(batch, block.Hash(), block.NumberU64(), receipts); err != nil {
+			return i, fmt.Errorf("failed to write block receipts: %v", err)
+		}
+		if err := WriteTxLookupEntries(batch, block); err != nil {
+			return i, fmt.Errorf("failed to write lookup metadata: %v", err)
+		}
+		stats.processed++
+
+		if batch.ValueSize() >= db.IdealBatchSize {
+			if err := batch.Write(); err != nil {
+				return 0, err
+			}
+			bytes += batch.ValueSize()
+			batch = bc.chainDb.NewBatch()
+		}
+	}
+	if batch.ValueSize() > 0 {
+		bytes += batch.ValueSize()
+		if err := batch.Write(); err != nil {
+			return 0, err
+		}
+	}
+
+	// Update the head fast sync block if better
+	bc.mu.Lock()
+	head := blockChain[len(blockChain)-1]
+	if td := bc.GetTd(head.Hash(), head.NumberU64()); td != nil { // Rewind may have occurred, skip in that case
+		if bc.GetTd(bc.currentFastBlock.Hash(), bc.currentFastBlock.NumberU64()).Cmp(td) < 0 {
+			if err := WriteHeadFastBlockHash(bc.chainDb, head.Hash()); err != nil {
+				log.Crit("Failed to update head fast block hash", "err", err)
+			}
+			bc.currentFastBlock = head
+		}
+	}
+	bc.mu.Unlock()
+
+	log.Info("Imported new block receipts",
+		"count", stats.processed,
+		"elapsed", common.PrettyDuration(time.Since(start)),
+		"bytes", bytes,
+		"number", head.Number(),
+		"hash", head.Hash(),
+		"ignored", stats.ignored)
+	return 0, nil
+}
+
+// HasHeader checks if a block header is present in the database or not, caching
+// it if present.
+func (bc *BlockChain) HasHeader(hash common.Hash, number uint64) bool {
+	return bc.hc.HasHeader(hash, number)
+}
+
+// HasBlock checks if a block is fully present in the database or not.
+func (bc *BlockChain) HasBlock(hash common.Hash, number uint64) bool {
+	if bc.blockCache.Contains(hash) {
+		return true
+	}
+	ok, _ := bc.chainDb.Has(blockBodyKey(hash, number))
+	return ok
+}
+
+// GetBodyRLP retrieves a block body in RLP encoding from the database by hash,
+// caching it if found.
+func (bc *BlockChain) GetBodyRLP(hash common.Hash) rlp.RawValue {
+	// Short circuit if the body's already in the cache, retrieve otherwise
+	if cached, ok := bc.bodyRLPCache.Get(hash); ok {
+		return cached.(rlp.RawValue)
+	}
+	body := GetBodyRLP(bc.chainDb, hash, bc.hc.GetBlockNumber(hash))
+	if len(body) == 0 {
+		return nil
+	}
+	// Cache the found body for next time and return
+	bc.bodyRLPCache.Add(hash, body)
+	return body
+}
+
+// GetTdByHash retrieves a block's total difficulty in the canonical chain from the
+// database by hash, caching it if found.
+func (bc *BlockChain) GetTdByHash(hash common.Hash) *big.Int {
+	return bc.hc.GetTdByHash(hash)
+}
+
+// InsertHeaderChain attempts to insert the given header chain in to the local
+// chain, possibly creating a reorg. If an error is returned, it will return the
+// index number of the failing header as well an error describing what went wrong.
+//
+// The verify parameter can be used to fine tune whether nonce verification
+// should be done or not. The reason behind the optional check is because some
+// of the header retrieval mechanisms already need to verify nonces, as well as
+// because nonces can be verified sparsely, not needing to check each.
+func (bc *BlockChain) InsertHeaderChain(chain []*types.Header, checkFreq int) (int, error) {
+	start := time.Now()
+	if i, err := bc.hc.ValidateHeaderChain(chain, checkFreq); err != nil {
+		return i, err
+	}
+
+	// Make sure only one thread manipulates the chain at once
+	bc.chainmu.Lock()
+	defer bc.chainmu.Unlock()
+
+	bc.wg.Add(1)
+	defer bc.wg.Done()
+
+	whFunc := func(header *types.Header) error {
+		bc.mu.Lock()
+		defer bc.mu.Unlock()
+
+		_, err := bc.hc.WriteHeader(header)
+		return err
+	}
+
+	return bc.hc.InsertHeaderChain(chain, whFunc, start)
+}
+
+// Rollback is designed to remove a chain of links from the database that aren't
+// certain enough to be valid.
+func (bc *BlockChain) Rollback(chain []common.Hash) {
+	bc.mu.Lock()
+	defer bc.mu.Unlock()
+
+	for i := len(chain) - 1; i >= 0; i-- {
+		hash := chain[i]
+
+		currentHeader := bc.hc.CurrentHeader()
+		if currentHeader.Hash() == hash {
+			bc.hc.SetCurrentHeader(bc.GetHeader(currentHeader.ParentHash, currentHeader.Number.Uint64()-1))
+		}
+		if bc.currentFastBlock.Hash() == hash {
+			bc.currentFastBlock = bc.GetBlock(bc.currentFastBlock.ParentHash(), bc.currentFastBlock.NumberU64()-1)
+			WriteHeadFastBlockHash(bc.chainDb, bc.currentFastBlock.Hash())
+		}
+		if bc.currentBlock.Hash() == hash {
+			bc.currentBlock = bc.GetBlock(bc.currentBlock.ParentHash(), bc.currentBlock.NumberU64()-1)
+			WriteHeadBlockHash(bc.chainDb, bc.currentBlock.Hash())
+		}
+	}
+}
+
+// Genesis retrieves the chain's genesis block.
+func (bc *BlockChain) Genesis() *types.Block {
+	return bc.genesisBlock
 }

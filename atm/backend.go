@@ -112,9 +112,10 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 	}
 	atm.txPool = core.NewTxPool(config.TxPool, atm.chainConfig, atm.blockchain)
 
-	//if eth.protocolManager, err = NewProtocolManager(eth.chainConfig, config.SyncMode, //config.NetworkId, eth.eventMux, eth.txPool, eth.engine, eth.blockchain, chainDb); //err != nil {
-	//	return nil, err
-	//}
+	if atm.protocolManager, err = NewProtocolManager(atm.chainConfig, 0, config.NetworkId, atm.eventMux, atm.txPool, atm.engine, atm.blockchain, chainDb); err != nil {
+		return nil, err
+	}
+
 	//eth.miner = miner.New(eth, eth.chainConfig, eth.EventMux(), eth.engine)
 	//eth.miner.SetExtra(makeExtraData(config.ExtraData))
 

@@ -7,7 +7,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/big"
+	"os"
 	"reflect"
+	"runtime"
+	"runtime/debug"
 	"time"
 )
 
@@ -102,6 +105,16 @@ func (h Hash) Bytes() []byte { return h[:] }
 // doing full logging into a file.
 func (h Hash) String() string {
 	return h.Hex()
+}
+
+func EmptyHash(h Hash) bool {
+	return h == Hash{}
+}
+
+// TerminalString implements log.TerminalStringer, formatting a string for console
+// output during logging.
+func (h Hash) TerminalString() string {
+	return fmt.Sprintf("%x…%x", h[:3], h[29:])
 }
 
 // SetBytes sets the address to the value of b. If b is larger than len(a) it will panic
@@ -302,4 +315,17 @@ func findLine(data []byte, offset int64) (line int) {
 		}
 	}
 	return
+}
+
+// Report gives off a warning requesting the user to submit an issue to the github tracker.
+func Report(extra ...interface{}) {
+	fmt.Fprintln(os.Stderr, "You've encountered a sought after, hard to reproduce bug. Please report this to the developers <3 https://github.com/atmchain/atmchain/issues")
+	fmt.Fprintln(os.Stderr, extra...)
+
+	_, file, line, _ := runtime.Caller(1)
+	fmt.Fprintf(os.Stderr, "%v:%v\n", file, line)
+
+	debug.PrintStack()
+
+	fmt.Fprintln(os.Stderr, "#### BUG! PLEASE REPORT ####")
 }

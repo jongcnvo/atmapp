@@ -41,6 +41,11 @@ type Node struct {
 // The node identifier is a marshaled elliptic curve public key.
 type NodeID [NodeIDBits / 8]byte
 
+// NodeID prints as a long hexadecimal number.
+func (n NodeID) String() string {
+	return fmt.Sprintf("%x", n[:])
+}
+
 // Pubkey returns the public key represented by the node ID.
 // It returns an error if the ID is not a point on the curve.
 func (id NodeID) Pubkey() (*ecdsa.PublicKey, error) {
