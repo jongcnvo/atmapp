@@ -1,13 +1,14 @@
 package types
 
 import (
-	"github.com/atmchain/atmapp/crypto"
-	"github.com/atmchain/atmapp/params"
+	"crypto/ecdsa"
 	"errors"
 	"fmt"
 	"math/big"
 
 	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/params"
 )
 
 var (
@@ -73,6 +74,16 @@ func Sender(signer Signer, tx *Transaction) (common.Address, error) {
 	}
 	tx.from.Store(sigCache{signer: signer, from: addr})
 	return addr, nil
+}
+
+// SignTx signs the transaction using the given signer and private key
+func SignTx(tx *Transaction, s Signer, prv *ecdsa.PrivateKey) (*Transaction, error) {
+	h := s.Hash(tx)
+	sig, err := crypto.Sign(h[:], prv)
+	if err != nil {
+		return nil, err
+	}
+	return tx.WithSignature(s, sig)
 }
 
 // EIP155Transaction implements Signer using the EIP155 rules.

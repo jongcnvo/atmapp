@@ -1,9 +1,9 @@
 package types
 
 import (
-	"github.com/atmchain/atmapp/rlp"
 	"container/heap"
 	"errors"
+	"github.com/atmchain/atmapp/rlp"
 	"math/big"
 	"sync/atomic"
 
@@ -125,6 +125,18 @@ func (tx *Transaction) Cost() *big.Int {
 	total := new(big.Int).Mul(tx.data.Price, new(big.Int).SetUint64(tx.data.GasLimit))
 	total.Add(total, tx.data.Amount)
 	return total
+}
+
+// WithSignature returns a new transaction with the given signature.
+// This signature needs to be formatted as described in the yellow paper (v+27).
+func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, error) {
+	r, s, v, err := signer.SignatureValues(tx, sig)
+	if err != nil {
+		return nil, err
+	}
+	cpy := &Transaction{data: tx.data}
+	cpy.data.R, cpy.data.S, cpy.data.V = r, s, v
+	return cpy, nil
 }
 
 // Message is a fully derived transaction and implements core.Message

@@ -1,5 +1,9 @@
 package accounts
 
+import (
+	"strings"
+)
+
 // URL represents the canonical identification URL of a wallet or account.
 //
 // It is a simplified version of url.URL, with the important limitations (which
@@ -15,4 +19,17 @@ package accounts
 type URL struct {
 	Scheme string // Protocol scheme to identify a capable account backend
 	Path   string // Path for the backend to identify a unique entity
+}
+
+// Cmp compares x and y and returns:
+//
+//   -1 if x <  y
+//    0 if x == y
+//   +1 if x >  y
+//
+func (u URL) Cmp(url URL) int {
+	if u.Scheme == url.Scheme {
+		return strings.Compare(u.Path, url.Path)
+	}
+	return strings.Compare(u.Scheme, url.Scheme)
 }

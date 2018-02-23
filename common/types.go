@@ -76,6 +76,35 @@ type Bloom [BloomByteLength]byte
 
 var bytesT = reflect.TypeOf(Bytes(nil))
 
+func hasHexPrefix(str string) bool {
+	return len(str) >= 2 && str[0] == '0' && (str[1] == 'x' || str[1] == 'X')
+}
+
+// IsHexAddress verifies whether a string can represent a valid hex-encoded
+// ATMChain address or not.
+func IsHexAddress(s string) bool {
+	if hasHexPrefix(s) {
+		s = s[2:]
+	}
+	return len(s) == 2*AddressLength && isHex(s)
+}
+
+func isHexCharacter(c byte) bool {
+	return ('0' <= c && c <= '9') || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F')
+}
+
+func isHex(str string) bool {
+	if len(str)%2 != 0 {
+		return false
+	}
+	for _, c := range []byte(str) {
+		if !isHexCharacter(c) {
+			return false
+		}
+	}
+	return true
+}
+
 //SetBytes set the hash to the value of b. If b is larger than len(h), 'b' will be cropped (from the left).
 func (h *Hash) SetBytes(b []byte) {
 	if len(b) > len(h) {

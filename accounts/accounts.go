@@ -1,6 +1,8 @@
 package accounts
 
 import (
+	"errors"
+	"fmt"
 	"math/big"
 
 	atmchain "github.com/atmchain/atmapp"
@@ -8,6 +10,49 @@ import (
 	"github.com/atmchain/atmapp/core/types"
 	"github.com/atmchain/atmapp/event"
 )
+
+const (
+	// WalletArrived is fired when a new wallet is detected either via USB or via
+	// a filesystem event in the keystore.
+	WalletArrived WalletEventType = iota
+
+	// WalletOpened is fired when a wallet is successfully opened with the purpose
+	// of starting any background processes such as automatic key derivation.
+	WalletOpened
+
+	// WalletDropped
+	WalletDropped
+)
+
+// ErrNotSupported is returned when an operation is requested from an account
+// backend that it does not support.
+var ErrNotSupported = errors.New("not supported")
+
+// ErrUnknownAccount is returned for any requested operation for which no backend
+// provides the specified account.
+var ErrUnknownAccount = errors.New("unknown account")
+
+// AuthNeededError is returned by backends for signing requests where the user
+// is required to provide further authentication before signing can succeed.
+//
+// This usually means either that a password needs to be supplied, or perhaps a
+// one time PIN code displayed by some hardware device.
+type AuthNeededError struct {
+	Needed string // Extra authentication the user needs to provide
+}
+
+// NewAuthNeededError creates a new authentication error with the extra details
+// about the needed fields set.
+func NewAuthNeededError(needed string) error {
+	return &AuthNeededError{
+		Needed: needed,
+	}
+}
+
+// Error implements the standard error interfacel.
+func (err *AuthNeededError) Error() string {
+	return fmt.Sprintf("authentication needed: %s", err.Needed)
+}
 
 // Account represents an ATMChain account located at a specific location defined
 // by the optional URL field.

@@ -29,11 +29,23 @@ var (
 	datadirInUseErrnos = map[uint]bool{11: true, 32: true, 35: true}
 )
 
+// StopError is returned if a Node fails to stop either any of its registered
+// services or itself.
+type StopError struct {
+	Server   error
+	Services map[reflect.Type]error
+}
+
+// Error generates a textual representation of the stop error.
+func (e *StopError) Error() string {
+	return fmt.Sprintf("server: %v, services: %v", e.Server, e.Services)
+}
+
 // Node is a container on which services can be registered.
 type Node struct {
 	eventmux *event.TypeMux // Event multiplexer used between the services of a stack
 	config   *Config
-	//accman *accounts.Manager
+	accman   *accounts.Manager
 
 	ephemeralKeystore string         // if non-empty, the key directory that will be removed by Stop
 	instanceDirLock   flock.Releaser // prevents concurrent use of instance directory
@@ -240,9 +252,10 @@ func (n *Node) Start() error {
 	for _, constructor := range n.serviceFuncs {
 		// Create a new context for the particular service
 		ctx := &ServiceContext{
-			config:   n.config,
-			services: make(map[reflect.Type]Service),
-			EventMux: n.eventmux,
+			config:         n.config,
+			services:       make(map[reflect.Type]Service),
+			EventMux:       n.eventmux,
+			AccountManager: n.accman,
 		}
 		for kind, s := range services { // copy needed for threaded access
 			ctx.services[kind] = s
@@ -585,6 +598,11 @@ func (n *Node) stopWS() {
 	}
 }
 
+// AccountManager retrieves the account manager used by the protocol stack.
+func (n *Node) AccountManager() *accounts.Manager {
+	return n.accman
+}
+
 // OpenDatabase opens an existing database with the given name (or creates one if no
 // previous can be found) from within the node's instance directory. If the node is
 // ephemeral, a memory database is returned.
@@ -593,4 +611,58 @@ func (n *Node) OpenDatabase(name string, cache, handles int) (db.Database, error
 		return db.NewMemDB()
 	}
 	return db.NewLDBDatabase(n.config.resolvePath(name), cache, handles)
+}
+
+// Stop terminates a running node along with all it's services. In the node was
+// not started, an error is returned.
+func (n *Node) Stop() error {
+	n.lock.Lock()
+	defer n.lock.Unlock()
+
+	// Short circuit if the node's not running
+	if n.server == nil {
+		return ErrNodeStopped
+	}
+
+	// Terminate the API, services and the p2p server.
+	n.stopWS()
+	n.stopHTTP()
+	n.stopIPC()
+	n.rpcAPIs = nil
+	failure := &StopError{
+		Services: make(map[reflect.Type]error),
+	}
+	for kind, service := range n.services {
+		if err := service.Stop(); err != nil {
+			failure.Services[kind] = err
+		}
+	}
+	n.server.Stop()
+	n.services = nil
+	n.server = nil
+
+	// Release instance directory lock.
+	if n.instanceDirLock != nil {
+		if err := n.instanceDirLock.Release(); err != nil {
+			n.log.Error("Can't release datadir lock", "err", err)
+		}
+		n.instanceDirLock = nil
+	}
+
+	// unblock n.Wait
+	close(n.stop)
+
+	// Remove the keystore if it was created ephemerally.
+	var keystoreErr error
+	if n.ephemeralKeystore != "" {
+		keystoreErr = os.RemoveAll(n.ephemeralKeystore)
+	}
+
+	if len(failure.Services) > 0 {
+		return failure
+	}
+	if keystoreErr != nil {
+		return keystoreErr
+	}
+	return nil
 }
