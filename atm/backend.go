@@ -57,7 +57,7 @@ type ATM struct {
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
 }
 
-// New creates a new Ethereum object (including the
+// New creates a new ATM object (including the
 // initialisation of the common ATMChain object)
 func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 	chainDb, err := CreateDB(ctx, config, "chaindata")

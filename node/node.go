@@ -241,6 +241,7 @@ func (n *Node) Start() error {
 		ctx := &ServiceContext{
 			config:   n.config,
 			services: make(map[reflect.Type]Service),
+			EventMux: n.eventmux,
 		}
 		for kind, s := range services { // copy needed for threaded access
 			ctx.services[kind] = s
