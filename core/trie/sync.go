@@ -1,10 +1,11 @@
 package trie
 
 import (
-	"../../common"
 	"errors"
 	"fmt"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 // ErrNotRequested is returned by the trie sync when it's requested to process a

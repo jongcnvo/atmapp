@@ -1,8 +1,9 @@
 package atm
 
 import (
-	"../core/types"
 	"sync/atomic"
+
+	"github.com/atmchain/atmapp/core/types"
 )
 
 type txsync struct {

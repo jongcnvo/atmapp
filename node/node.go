@@ -1,11 +1,11 @@
 package node
 
 import (
-	"../db"
-	"../event"
-	"../log"
-	"../p2p"
-	"../rpc"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/event"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/p2p"
+	"github.com/atmchain/atmapp/rpc"
 	"errors"
 	"fmt"
 	"net"

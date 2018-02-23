@@ -1,9 +1,6 @@
 package downloader
 
 import (
-	"../../common"
-	"../../event"
-	"../../log"
 	"errors"
 	"fmt"
 	"math"
@@ -12,6 +9,10 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/event"
+	"github.com/atmchain/atmapp/log"
 )
 
 const (

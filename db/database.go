@@ -1,7 +1,7 @@
 package db
 
 import (
-	"../log"
+	"github.com/atmchain/atmapp/log"
 	"sync"
 	"time"
 

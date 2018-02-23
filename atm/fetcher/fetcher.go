@@ -1,12 +1,12 @@
 package fetcher
 
 import (
-	"../../common"
-	"../../core/types"
-	"../../log"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/log"
 	"errors"
 	"time"
 
+	"github.com/atmchain/atmapp/common"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 

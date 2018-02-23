@@ -1,12 +1,13 @@
 package types
 
 import (
-	"../../common"
-	"../../rlp"
+	"github.com/atmchain/atmapp/rlp"
 	"container/heap"
 	"errors"
 	"math/big"
 	"sync/atomic"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 var (

@@ -1,11 +1,12 @@
 package core
 
 import (
-	"../common"
-	"../consensus"
-	"./types"
-	"./vm"
+	"github.com/atmchain/atmapp/consensus"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/core/vm"
 	"math/big"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 // ChainContext supports retrieving headers and consensus parameters from the

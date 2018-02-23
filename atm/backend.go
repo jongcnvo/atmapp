@@ -1,25 +1,26 @@
 package atm
 
 import (
-	"../common"
-	"../consensus"
-	"../consensus/clique"
-	"../core"
-	"../core/bloombits"
-	"../core/vm"
-	"../db"
-	"../event"
-	"../log"
-	"../miner"
-	"../node"
-	"../p2p"
-	"../params"
-	"../rlp"
-	"../rpc"
 	"fmt"
 	"math/big"
 	"runtime"
 	"sync"
+
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/consensus"
+	"github.com/atmchain/atmapp/consensus/clique"
+	"github.com/atmchain/atmapp/core"
+	"github.com/atmchain/atmapp/core/bloombits"
+	"github.com/atmchain/atmapp/core/vm"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/event"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/miner"
+	"github.com/atmchain/atmapp/node"
+	"github.com/atmchain/atmapp/p2p"
+	"github.com/atmchain/atmapp/params"
+	"github.com/atmchain/atmapp/rlp"
+	"github.com/atmchain/atmapp/rpc"
 )
 
 type ATM struct {

@@ -1,9 +1,9 @@
 package miner
 
 import (
-	"../common"
-	"../core/types"
-	"../log"
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/log"
 	"container/ring"
 	"sync"
 )

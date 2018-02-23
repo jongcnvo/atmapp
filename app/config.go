@@ -1,15 +1,16 @@
 package main
 
 import (
-	"../atm"
-	"../node"
-	"../p2p"
-	"../p2p/nat"
-	"../params"
 	"os"
 	"os/user"
 	"path/filepath"
 	"runtime"
+
+	"github.com/atmchain/atmapp/atm"
+	"github.com/atmchain/atmapp/node"
+	"github.com/atmchain/atmapp/p2p"
+	"github.com/atmchain/atmapp/p2p/nat"
+	"github.com/atmchain/atmapp/params"
 )
 
 func homeDir() string {

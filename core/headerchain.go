@@ -1,20 +1,20 @@
 package core
 
 import (
-	"../common"
-	"../consensus"
-	"../db"
-	"../log"
-	"../params"
-	"./types"
 	crand "crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/atmchain/atmapp/consensus"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/params"
 	"math"
 	"math/big"
 	mrand "math/rand"
 	"time"
 
+	"github.com/atmchain/atmapp/common"
 	"github.com/hashicorp/golang-lru"
 )
 

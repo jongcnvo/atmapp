@@ -1,12 +1,6 @@
 package downloader
 
 import (
-	"../../common"
-	"../../core/types"
-	"../../db"
-	"../../event"
-	"../../log"
-	"../../params"
 	"errors"
 	"fmt"
 	"math"
@@ -14,6 +8,13 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/event"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/params"
 )
 
 // SyncMode represents the synchronisation mode of the downloader.

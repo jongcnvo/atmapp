@@ -1,11 +1,12 @@
 package atm
 
 import (
-	"../common"
-	"../core"
-	"../core/types"
-	"../event"
 	"math/big"
+
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/core"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/event"
 )
 
 // Official short name of the protocol used during capability negotiation.

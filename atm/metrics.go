@@ -1,7 +1,7 @@
 package atm
 
 import (
-	"../p2p"
+	"github.com/atmchain/atmapp/p2p"
 )
 
 // meteredMsgReadWriter is a wrapper around a p2p.MsgReadWriter, capable of

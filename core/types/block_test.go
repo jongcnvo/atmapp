@@ -1,10 +1,11 @@
 package types
 
 import (
-	"../common"
 	"math/big"
 	"strings"
 	"testing"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 func TestHash(t *testing.T) {

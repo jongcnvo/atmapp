@@ -1,13 +1,14 @@
 package clique
 
 import (
-	"../../common"
-	"../../core/types"
-	"../../db"
-	"../../params"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/params"
 	"bytes"
 	"encoding/json"
 	lru "github.com/hashicorp/golang-lru"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 // Vote represents a single vote that an authorized signer made to modify the

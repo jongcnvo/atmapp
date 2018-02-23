@@ -1,12 +1,13 @@
 package types
 
 import (
-	"../../common"
-	"../../crypto"
-	"../../params"
+	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/params"
 	"errors"
 	"fmt"
 	"math/big"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 var (

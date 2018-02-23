@@ -1,14 +1,15 @@
 package main
 
 import (
-	"../atm"
-	"../log"
-	"../node"
-	"../utils"
 	"fmt"
 	"gopkg.in/urfave/cli.v1"
 	"os"
 	"runtime"
+
+	"github.com/atmchain/atmapp/atm"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/node"
+	"github.com/atmchain/atmapp/utils"
 )
 
 const (

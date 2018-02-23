@@ -1,10 +1,11 @@
 package atm
 
 import (
-	"../common"
-	"../core"
-	"../params"
 	"math/big"
+
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/core"
+	"github.com/atmchain/atmapp/params"
 )
 
 type Config struct {

@@ -1,12 +1,6 @@
 package core
 
 import (
-	"../common"
-	"../event"
-	"../log"
-	"../params"
-	"./state"
-	"./types"
 	"errors"
 	"fmt"
 	"math"
@@ -15,6 +9,12 @@ import (
 	"sync"
 	"time"
 
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/core/state"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/event"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/params"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 

@@ -1,10 +1,10 @@
 package p2p
 
 import (
-	"../common"
-	"../log"
-	"../rlp"
-	"./discover"
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/rlp"
+	"github.com/atmchain/atmapp/p2p/discover"
 	"errors"
 	"fmt"
 	"io"

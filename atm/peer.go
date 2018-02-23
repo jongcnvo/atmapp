@@ -1,16 +1,16 @@
 package atm
 
 import (
-	"../common"
-	"../core/types"
-	"../p2p"
-	"../rlp"
 	"errors"
 	"fmt"
 	"math/big"
 	"sync"
 	"time"
 
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/p2p"
+	"github.com/atmchain/atmapp/rlp"
 	"gopkg.in/fatih/set.v0"
 )
 

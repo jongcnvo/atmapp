@@ -1,8 +1,9 @@
 package core
 
 import (
-	"../common"
-	"./types"
+	"github.com/atmchain/atmapp/core/types"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 // RemovedLogsEvent is posted when a reorg happens

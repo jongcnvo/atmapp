@@ -1,13 +1,14 @@
 package core
 
 import (
-	"../common"
-	"../log"
-	"./types"
 	"container/heap"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/log"
 	"math"
 	"math/big"
 	"sort"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 // nonceHeap is a heap.Interface implementation over 64bit unsigned integers for

@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"../common"
+	"github.com/atmchain/atmapp/common"
 )
 
 // Subscription represents a stream of events. The carrier of the events is typically a

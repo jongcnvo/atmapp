@@ -1,11 +1,11 @@
 package node
 
 import (
-	"../common"
-	"../crypto"
-	"../log"
-	"../p2p"
-	"../p2p/discover"
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/p2p"
+	"github.com/atmchain/atmapp/p2p/discover"
 	"crypto/ecdsa"
 	"fmt"
 	"os"

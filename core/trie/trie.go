@@ -1,17 +1,18 @@
 package trie
 
 import (
-	"../../common"
-	"../../crypto"
-	"../../log"
-	"../../rlp"
 	"bytes"
 	"fmt"
-	"github.com/rcrowley/go-metrics"
 	"hash"
 	"io"
 	"strings"
 	"sync"
+
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/rlp"
+	"github.com/rcrowley/go-metrics"
 )
 
 var indices = []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f", "[17]"}

@@ -1,12 +1,13 @@
 package core
 
 import (
-	"../common"
-	"../core/types"
-	"../db"
-	"../log"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/log"
 	"sync"
 	"time"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 // ChainIndexerBackend defines the methods needed to process chain segments in

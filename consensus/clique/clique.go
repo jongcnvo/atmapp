@@ -1,15 +1,14 @@
 package clique
 
 import (
-	"../../common"
-	"../../consensus"
-	"../../core/state"
-	"../../core/types"
-	"../../crypto"
-	"../../db"
-	"../../log"
-	"../../params"
-	"../../rlp"
+	"github.com/atmchain/atmapp/consensus"
+	"github.com/atmchain/atmapp/core/state"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/params"
+	"github.com/atmchain/atmapp/rlp"
 	"bytes"
 	"errors"
 	lru "github.com/hashicorp/golang-lru"
@@ -17,6 +16,8 @@ import (
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 const (

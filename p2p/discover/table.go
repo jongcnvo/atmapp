@@ -1,9 +1,9 @@
 package discover
 
 import (
-	"../../common"
-	"../../crypto"
-	"../../log"
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/log"
 	"crypto/rand"
 	"encoding/binary"
 	"errors"

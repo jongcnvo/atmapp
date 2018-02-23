@@ -1,26 +1,26 @@
 package core
 
 import (
-	"../common"
-	"../consensus"
-	"../crypto"
-	"../db"
-	"../event"
-	"../log"
-	"../params"
-	"../rlp"
-	"./state"
-	"./trie"
-	"./types"
-	"./vm"
 	"errors"
 	"fmt"
+	"github.com/atmchain/atmapp/consensus"
+	"github.com/atmchain/atmapp/core/state"
+	"github.com/atmchain/atmapp/core/trie"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/core/vm"
+	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/event"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/params"
+	"github.com/atmchain/atmapp/rlp"
 	"math/big"
 	mrand "math/rand"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/atmchain/atmapp/common"
 	"github.com/hashicorp/golang-lru"
 )
 

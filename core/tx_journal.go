@@ -1,13 +1,14 @@
 package core
 
 import (
-	"../common"
-	"../log"
-	"../rlp"
-	"./types"
 	"errors"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/rlp"
 	"io"
 	"os"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 // errNoActiveJournal is returned if a transaction is attempted to be inserted

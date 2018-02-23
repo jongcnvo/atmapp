@@ -1,12 +1,13 @@
 package consensus
 
 import (
-	"../common"
-	"../core/state"
-	"../core/types"
-	"../params"
+	"github.com/atmchain/atmapp/core/state"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/params"
 	"errors"
 	"math/big"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 var (

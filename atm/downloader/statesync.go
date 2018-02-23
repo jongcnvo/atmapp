@@ -1,15 +1,16 @@
 package downloader
 
 import (
-	"../../common"
-	"../../core/trie"
-	"../../db"
-	"../../log"
 	"fmt"
 	"hash"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/core/trie"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/log"
 )
 
 // stateReq represents a batch of state fetch requests groupped together into

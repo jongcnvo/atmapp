@@ -1,9 +1,9 @@
 package p2p
 
 import (
-	"../rlp"
-	"./discover"
 	"fmt"
+	"github.com/atmchain/atmapp/p2p/discover"
+	"github.com/atmchain/atmapp/rlp"
 	"io"
 )
 

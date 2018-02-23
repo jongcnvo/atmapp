@@ -42,7 +42,7 @@ import (
 	"fmt"
 	"hash"
 
-	atmcrypto "../../crypto"
+	atmcrypto "github.com/atmchain/atmapp/crypto"
 )
 
 var (

@@ -1,7 +1,7 @@
 package db
 
 import (
-	"../common"
+	"github.com/atmchain/atmapp/common"
 	"errors"
 	"sync"
 )

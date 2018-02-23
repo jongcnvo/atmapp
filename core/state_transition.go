@@ -1,11 +1,12 @@
 package core
 
 import (
-	"../common"
-	"../core/vm"
-	"../params"
+	"github.com/atmchain/atmapp/core/vm"
+	"github.com/atmchain/atmapp/params"
 	"math"
 	"math/big"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 // Message represents a message sent to a contract.

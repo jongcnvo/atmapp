@@ -1,7 +1,7 @@
 package utils
 
 import (
-	"../log"
+	"github.com/atmchain/atmapp/log"
 	colorable "github.com/mattn/go-colorable"
 	"gopkg.in/urfave/cli.v1"
 	"io"

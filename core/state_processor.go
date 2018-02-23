@@ -1,12 +1,13 @@
 package core
 
 import (
-	"../common"
-	"../consensus"
-	"../params"
-	"./state"
-	"./types"
-	"./vm"
+	"github.com/atmchain/atmapp/consensus"
+	"github.com/atmchain/atmapp/params"
+	"github.com/atmchain/atmapp/core/state"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/core/vm"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 // StateProcessor is a basic Processor, which takes care of transitioning

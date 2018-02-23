@@ -1,8 +1,9 @@
 package types
 
 import (
-	"../../common"
-	"../../rlp"
+	"github.com/atmchain/atmapp/rlp"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 // Receipt represents the results of a transaction.

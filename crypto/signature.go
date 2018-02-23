@@ -1,10 +1,6 @@
 package crypto
 
 import (
-	"../common"
-	"../common/math"
-	"../rlp"
-	"./secp256k1"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -15,6 +11,11 @@ import (
 	"io/ioutil"
 	"math/big"
 	"os"
+
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/common/math"
+	"github.com/atmchain/atmapp/crypto/secp256k1"
+	"github.com/atmchain/atmapp/rlp"
 )
 
 var (

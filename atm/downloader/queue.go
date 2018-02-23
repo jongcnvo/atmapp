@@ -1,14 +1,14 @@
 package downloader
 
 import (
-	"../../common"
-	"../../core/types"
-	"../../log"
 	"errors"
 	"fmt"
 	"sync"
 	"time"
 
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/log"
 	"gopkg.in/karalabe/cookiejar.v2/collections/prque"
 )
 

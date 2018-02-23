@@ -1,11 +1,11 @@
 package core
 
 import (
-	"../consensus"
-	"../core/types"
-	"../params"
-	"./state"
 	"fmt"
+	"github.com/atmchain/atmapp/consensus"
+	"github.com/atmchain/atmapp/core/state"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/params"
 )
 
 // BlockValidator is responsible for validating block headers, uncles and

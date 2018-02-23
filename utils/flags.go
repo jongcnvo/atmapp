@@ -1,9 +1,9 @@
 package utils
 
 import (
-	"../atm"
-	"../node"
-	"../params"
+	"github.com/atmchain/atmapp/atm"
+	"github.com/atmchain/atmapp/node"
+	"github.com/atmchain/atmapp/params"
 	"fmt"
 	"gopkg.in/urfave/cli.v1"
 	"io"

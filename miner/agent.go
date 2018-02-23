@@ -1,8 +1,8 @@
 package miner
 
 import (
-	"../consensus"
-	"../log"
+	"github.com/atmchain/atmapp/consensus"
+	"github.com/atmchain/atmapp/log"
 	"sync"
 	"sync/atomic"
 )

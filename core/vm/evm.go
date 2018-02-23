@@ -1,8 +1,9 @@
 package vm
 
 import (
-	"../../common"
 	"math/big"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 type (

@@ -1,15 +1,16 @@
 package clique
 
 import (
-	"../../common"
-	"../../core"
-	"../../crypto"
-	"../../db"
-	"../../params"
+	"github.com/atmchain/atmapp/core"
+	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/params"
 	"bytes"
 	"crypto/ecdsa"
 	"math/big"
 	"testing"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 type testerVote struct {

@@ -1,17 +1,17 @@
 package discover
 
 import (
-	"../../common"
-	"../../crypto"
-	"../../log"
-	"../../rlp"
-	"../nat"
 	"bytes"
 	"container/list"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"errors"
 	"fmt"
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/p2p/nat"
+	"github.com/atmchain/atmapp/rlp"
 	"net"
 	"sort"
 	"time"

@@ -1,1 +1,6 @@
 .DS_Store
+
+build/_vendor/pkg
+
+/build/_workspace/
+/build/bin/

@@ -1,9 +1,10 @@
 package trie
 
 import (
-	"../../common"
 	"bytes"
 	"errors"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 // iteratorEnd is stored in nodeIterator.err when iteration is done.

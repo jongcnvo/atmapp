@@ -1,8 +1,9 @@
 package state
 
 import (
-	"../../common"
 	"sync"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 type account struct {

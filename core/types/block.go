@@ -1,15 +1,16 @@
 package types
 
 import (
-	"../../common"
-	"../../crypto"
-	"../../rlp"
-	"../trie"
 	"bytes"
+	"github.com/atmchain/atmapp/core/trie"
+	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/rlp"
 	"math/big"
 	"sort"
 	"sync/atomic"
 	"time"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 var (

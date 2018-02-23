@@ -1,9 +1,9 @@
 package discover
 
 import (
-	"../../common"
-	"../../crypto"
-	"../../crypto/secp256k1"
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/crypto/secp256k1"
 	"crypto/ecdsa"
 	"encoding/hex"
 	"errors"

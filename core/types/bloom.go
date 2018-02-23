@@ -1,9 +1,10 @@
 package types
 
 import (
-	"../../common"
-	"../../crypto"
+	"github.com/atmchain/atmapp/crypto"
 	"math/big"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 func CreateBloom(receipts Receipts) common.Bloom {

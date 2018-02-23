@@ -1,11 +1,6 @@
 package p2p
 
 import (
-	"../crypto"
-	"../crypto/ecies"
-	"../crypto/secp256k1"
-	"../rlp"
-	"./discover"
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
@@ -16,6 +11,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/crypto/ecies"
+	"github.com/atmchain/atmapp/crypto/secp256k1"
+	"github.com/atmchain/atmapp/p2p/discover"
+	"github.com/atmchain/atmapp/rlp"
 	"hash"
 	"io"
 	"io/ioutil"

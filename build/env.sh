@@ -13,10 +13,10 @@ workspace="$PWD/build/_workspace"
 root="$PWD"
 
 atmdir="$workspace/src/github.com/atmchain"
-if [ ! -L "$atmdir/atmchain" ]; then
+if [ ! -L "$atmdir/atmapp" ]; then
     mkdir -p "$atmdir"
     cd "$atmdir"
-    ln -s ../../../../../. atmchain
+    ln -s ../../../../../. atmapp
     cd "$root"
 fi
 
@@ -25,8 +25,11 @@ GOPATH="$workspace"
 export GOPATH
 
 # Run the command inside the workspace.
-cd "$atmdir/atmchain"
-PWD="$atmdir/atmchain"
+cd "$atmdir/atmapp"
+PWD="$atmdir/atmapp"
 
 # Launch the arguments with the configured environment.
 exec "$@"
+
+echo "Done building."
+echo "Run \"$(GOBIN)/atmapp\" to launch ATMChain."

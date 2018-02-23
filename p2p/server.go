@@ -1,16 +1,16 @@
 package p2p
 
 import (
-	"../common"
-	"../log"
-	"../rlp"
-	"./discover"
-	"./nat"
 	"container/heap"
 	"crypto/ecdsa"
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/p2p/discover"
+	"github.com/atmchain/atmapp/p2p/nat"
+	"github.com/atmchain/atmapp/rlp"
 	"io"
 	"net"
 	"sync"

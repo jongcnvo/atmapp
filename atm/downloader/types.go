@@ -1,8 +1,9 @@
 package downloader
 
 import (
-	"../../core/types"
 	"fmt"
+
+	"github.com/atmchain/atmapp/core/types"
 )
 
 // headerPack is a batch of block headers returned by a peer.

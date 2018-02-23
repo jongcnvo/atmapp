@@ -1,7 +1,7 @@
 package params
 
 import (
-	"../common"
+	"github.com/atmchain/atmapp/common"
 	"fmt"
 	"math/big"
 )

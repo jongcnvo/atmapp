@@ -1,10 +1,11 @@
 package crypto
 
 import (
-	"../common"
 	"encoding/binary"
 	"hash"
 	"unsafe"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 // spongeDirection indicates the direction bytes are flowing through the sponge.

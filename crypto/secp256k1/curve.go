@@ -1,10 +1,11 @@
 package secp256k1
 
 import (
-	"../../common/math"
 	"crypto/elliptic"
 	"math/big"
 	"unsafe"
+
+	"github.com/atmchain/atmapp/common/math"
 )
 
 /*

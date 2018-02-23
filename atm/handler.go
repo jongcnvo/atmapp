@@ -1,19 +1,6 @@
 package atm
 
 import (
-	"../common"
-	"../consensus"
-	"../core"
-	"../core/types"
-	"../db"
-	"../event"
-	"../log"
-	"../p2p"
-	"../p2p/discover"
-	"../params"
-	"../rlp"
-	"./downloader"
-	"./fetcher"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -22,6 +9,20 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/atmchain/atmapp/atm/downloader"
+	"github.com/atmchain/atmapp/atm/fetcher"
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/consensus"
+	"github.com/atmchain/atmapp/core"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/event"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/p2p"
+	"github.com/atmchain/atmapp/p2p/discover"
+	"github.com/atmchain/atmapp/params"
+	"github.com/atmchain/atmapp/rlp"
 )
 
 const (

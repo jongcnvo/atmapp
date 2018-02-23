@@ -1,7 +1,7 @@
 package nat
 
 import (
-	"../../log"
+	"github.com/atmchain/atmapp/log"
 	"fmt"
 	"net"
 	"sync"

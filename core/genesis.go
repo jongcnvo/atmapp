@@ -1,17 +1,18 @@
 package core
 
 import (
-	"../common"
-	"../db"
-	"../log"
-	"../params"
-	"../rlp"
-	"./state"
-	"./types"
 	"errors"
 	"fmt"
+	"github.com/atmchain/atmapp/core/state"
+	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/params"
+	"github.com/atmchain/atmapp/rlp"
 	"math/big"
 	"strings"
+
+	"github.com/atmchain/atmapp/common"
 )
 
 //go:generate gencodec -type Genesis -field-override genesisSpecMarshaling -out gen_genesis.go

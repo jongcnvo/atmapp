@@ -1,14 +1,14 @@
 package miner
 
 import (
-	"../atm/downloader"
-	"../common"
-	"../consensus"
-	"../core"
-	"../db"
-	"../event"
-	"../log"
-	"../params"
+	"github.com/atmchain/atmapp/atm/downloader"
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/consensus"
+	"github.com/atmchain/atmapp/core"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/event"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/params"
 	"fmt"
 	"sync/atomic"
 )
