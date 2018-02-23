@@ -7,7 +7,6 @@ import (
 	"../../params"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	lru "github.com/hashicorp/golang-lru"
 )
 
@@ -65,8 +64,6 @@ func loadSnapshot(config *params.CliqueConfig, sigcache *lru.ARCCache, db db.Dat
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("Load snapshot:", string(blob), hash.String())
 
 	snap := new(Snapshot)
 	if err := json.Unmarshal(blob, snap); err != nil {
