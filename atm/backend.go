@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/atmchain/atmapp/accounts"
 	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/consensus"
 	"github.com/atmchain/atmapp/consensus/clique"
@@ -39,9 +40,9 @@ type ATM struct {
 	// DB interfaces
 	chainDb db.Database // Block chain database
 
-	eventMux *event.TypeMux
-	engine   consensus.Engine
-	//accountManager *accounts.Manager
+	eventMux       *event.TypeMux
+	engine         consensus.Engine
+	accountManager *accounts.Manager
 
 	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
 	bloomIndexer  *core.ChainIndexer             // Bloom indexer operating during block imports
@@ -73,13 +74,13 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 	log.Info("Initialised chain configuration", "config", chainConfig)
 
 	atm := &ATM{
-		config:      config,
-		chainDb:     chainDb,
-		chainConfig: chainConfig,
-		eventMux:    ctx.EventMux,
-		//accountManager: ctx.AccountManager,
-		engine:       CreateConsensusEngine(ctx, chainConfig, chainDb),
-		shutdownChan: make(chan bool),
+		config:         config,
+		chainDb:        chainDb,
+		chainConfig:    chainConfig,
+		eventMux:       ctx.EventMux,
+		accountManager: ctx.AccountManager,
+		engine:         CreateConsensusEngine(ctx, chainConfig, chainDb),
+		shutdownChan:   make(chan bool),
 		//stopDbUpgrade: stopDbUpgrade,
 		networkId:     config.NetworkId,
 		gasPrice:      config.GasPrice,

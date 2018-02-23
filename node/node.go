@@ -1,11 +1,6 @@
 package node
 
 import (
-	"github.com/atmchain/atmapp/db"
-	"github.com/atmchain/atmapp/event"
-	"github.com/atmchain/atmapp/log"
-	"github.com/atmchain/atmapp/p2p"
-	"github.com/atmchain/atmapp/rpc"
 	"errors"
 	"fmt"
 	"net"
@@ -16,6 +11,12 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/atmchain/atmapp/accounts"
+	"github.com/atmchain/atmapp/db"
+	"github.com/atmchain/atmapp/event"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/p2p"
+	"github.com/atmchain/atmapp/rpc"
 	"github.com/prometheus/prometheus/util/flock"
 )
 
@@ -73,10 +74,10 @@ type ServiceConstructor func(ctx *ServiceContext) (Service, error)
 // the protocol stack, that is passed to all constructors to be optionally used;
 // as well as utility methods to operate on the service environment.
 type ServiceContext struct {
-	config   *Config
-	services map[reflect.Type]Service // Index of the already constructed services
-	EventMux *event.TypeMux           // Event multiplexer used for decoupled notifications
-	//AccountManager *accounts.Manager        // Account manager created by the node.
+	config         *Config
+	services       map[reflect.Type]Service // Index of the already constructed services
+	EventMux       *event.TypeMux           // Event multiplexer used for decoupled notifications
+	AccountManager *accounts.Manager        // Account manager created by the node.
 }
 
 // ResolvePath resolves a user path into the data directory if that was relative

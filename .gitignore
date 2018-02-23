@@ -4,3 +4,7 @@ build/_vendor/pkg
 
 /build/_workspace/
 /build/bin/
+
+/vendor/github.com
+/vendor/golang.org
+/vendor/gopkg.in
