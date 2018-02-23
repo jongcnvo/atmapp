@@ -1,8 +1,8 @@
 package main
 
 import (
-	"../rlp"
 	"fmt"
+	"github.com/atmchain/atmchain/rlp"
 	"math/big"
 )
 
