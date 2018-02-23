@@ -30,6 +30,3 @@ PWD="$atmdir/atmapp"
 
 # Launch the arguments with the configured environment.
 exec "$@"
-
-echo "Done building."
-echo "Run \"$(GOBIN)/atmapp\" to launch ATMChain."

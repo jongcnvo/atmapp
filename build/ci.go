@@ -38,7 +38,7 @@ type Environment struct {
 
 // Env returns build environment metadata gathered from git.
 func Env() Environment {
-	env := applyEnvFlags(Environment{Name: "local", Repo: "atmchain/atmchain"})
+	env := applyEnvFlags(Environment{Name: "local", Repo: "atmchain/atmapp"})
 
 	head := readGitFile("HEAD")
 	if splits := strings.Split(head, " "); len(splits) == 2 {
