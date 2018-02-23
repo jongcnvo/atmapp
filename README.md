@@ -6,23 +6,23 @@ Blockchain protocol for smart media
 1. Clone ATMChain source code from github 
 
 ```
-$go get github.com/atmchain/atmapp'
+$ go get github.com/atmchain/atmapp
 ```
 
 2. Enter the root folder
 
 ```
-$cd ~go/src/github.com/atmchain/atmapp'
+$ cd ~go/src/github.com/atmchain/atmapp
 ```
 
 3. Sync external dependencies
 
 ```
-$govendor sync
+$ govendor sync
 ```
 
 4. Make binary
 
 ```
-$make
+$ make
 ```
