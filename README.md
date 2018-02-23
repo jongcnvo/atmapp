@@ -1,7 +1,7 @@
 # ATMChain
 Blockchain protocol for smart media
 
-##Installation
+## Installation
 
 1. Clone source code from github 'go get github.com/atmchain/atmapp'
 2. Enter the target dir using 'cd ~go/src/github.com/atmchain/atmapp'
