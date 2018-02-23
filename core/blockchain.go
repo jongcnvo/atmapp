@@ -448,6 +448,22 @@ func (bc *BlockChain) GetBlockByNumber(number uint64) *types.Block {
 	return bc.GetBlock(hash, number)
 }
 
+// GetBlocksFromHash returns the block corresponding to hash and up to n-1 ancestors.
+// [deprecated by eth/62]
+func (bc *BlockChain) GetBlocksFromHash(hash common.Hash, n int) (blocks []*types.Block) {
+	number := bc.hc.GetBlockNumber(hash)
+	for i := 0; i < n; i++ {
+		block := bc.GetBlock(hash, number)
+		if block == nil {
+			break
+		}
+		blocks = append(blocks, block)
+		hash = block.ParentHash()
+		number--
+	}
+	return
+}
+
 // GetHeader retrieves a block header from the database by hash and number,
 // caching it if found.
 func (bc *BlockChain) GetHeader(hash common.Hash, number uint64) *types.Header {
@@ -951,6 +967,11 @@ func (bc *BlockChain) StateAt(root common.Hash) (*state.StateDB, error) {
 // SubscribeChainHeadEvent registers a subscription of ChainHeadEvent.
 func (bc *BlockChain) SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Subscription {
 	return bc.scope.Track(bc.chainHeadFeed.Subscribe(ch))
+}
+
+// SubscribeChainSideEvent registers a subscription of ChainSideEvent.
+func (bc *BlockChain) SubscribeChainSideEvent(ch chan<- ChainSideEvent) event.Subscription {
+	return bc.scope.Track(bc.chainSideFeed.Subscribe(ch))
 }
 
 // GetBlockHashesFromHash retrieves a number of block hashes starting at a given

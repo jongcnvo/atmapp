@@ -12,6 +12,7 @@ import (
 	"fmt"
 	lru "github.com/hashicorp/golang-lru"
 	"math/big"
+	"sort"
 	"sync"
 )
 
@@ -458,6 +459,43 @@ func (self *StateDB) GetBalance(addr common.Address) *big.Int {
 		return stateObject.Balance()
 	}
 	return common.Big0
+}
+
+func (self *StateDB) Logs() []*types.Log {
+	var logs []*types.Log
+	for _, lgs := range self.logs {
+		logs = append(logs, lgs...)
+	}
+	return logs
+}
+
+// Snapshot returns an identifier for the current revision of the state.
+func (self *StateDB) Snapshot() int {
+	id := self.nextRevisionId
+	self.nextRevisionId++
+	self.validRevisions = append(self.validRevisions, revision{id, len(self.journal)})
+	return id
+}
+
+// RevertToSnapshot reverts all state changes made since the given revision.
+func (self *StateDB) RevertToSnapshot(revid int) {
+	// Find the snapshot in the stack of valid snapshots.
+	idx := sort.Search(len(self.validRevisions), func(i int) bool {
+		return self.validRevisions[i].id >= revid
+	})
+	if idx == len(self.validRevisions) || self.validRevisions[idx].id != revid {
+		panic(fmt.Errorf("revision id %v cannot be reverted", revid))
+	}
+	snapshot := self.validRevisions[idx].journalIndex
+
+	// Replay the journal to undo changes.
+	for i := len(self.journal) - 1; i >= snapshot; i-- {
+		self.journal[i].undo(self)
+	}
+	self.journal = self.journal[:snapshot]
+
+	// Remove invalidated snapshots from the stack.
+	self.validRevisions = self.validRevisions[:idx]
 }
 
 type cachingDB struct {

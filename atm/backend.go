@@ -10,12 +10,15 @@ import (
 	"../db"
 	"../event"
 	"../log"
+	"../miner"
 	"../node"
 	"../p2p"
 	"../params"
+	"../rlp"
 	"../rpc"
 	"fmt"
 	"math/big"
+	"runtime"
 	"sync"
 )
 
@@ -31,7 +34,6 @@ type ATM struct {
 	txPool          *core.TxPool
 	blockchain      *core.BlockChain
 	protocolManager *ProtocolManager
-	//lesServer       LesServer
 
 	// DB interfaces
 	chainDb db.Database // Block chain database
@@ -45,7 +47,7 @@ type ATM struct {
 
 	//ApiBackend *ATMApiBackend
 
-	//miner    *miner.Miner
+	miner    *miner.Miner
 	gasPrice *big.Int
 	atmbase  common.Address
 
@@ -116,8 +118,8 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 		return nil, err
 	}
 
-	//eth.miner = miner.New(eth, eth.chainConfig, eth.EventMux(), eth.engine)
-	//eth.miner.SetExtra(makeExtraData(config.ExtraData))
+	atm.miner = miner.New(atm, atm.chainConfig, atm.EventMux(), atm.engine)
+	atm.miner.SetExtra(makeExtraData(config.ExtraData))
 
 	//eth.ApiBackend = &EthApiBackend{eth, nil}
 	gpoParams := config.GPO
@@ -127,6 +129,23 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 	//eth.ApiBackend.gpo = gasprice.NewOracle(eth.ApiBackend, gpoParams)
 
 	return atm, nil
+}
+
+func makeExtraData(extra []byte) []byte {
+	if len(extra) == 0 {
+		// create default extradata
+		extra, _ = rlp.EncodeToBytes([]interface{}{
+			uint(params.VersionMajor<<16 | params.VersionMinor<<8 | params.VersionPatch),
+			"atm",
+			runtime.Version(),
+			runtime.GOOS,
+		})
+	}
+	if uint64(len(extra)) > params.MaximumExtraDataSize {
+		log.Warn("Miner extra data exceed limit", "extra", common.Bytes(extra), "limit", params.MaximumExtraDataSize)
+		extra = nil
+	}
+	return extra
 }
 
 // CreateDB creates the chain database.
@@ -209,6 +228,8 @@ func (s *ATM) APIs() []rpc.API {
 	return nil
 }
 
+func (s *ATM) BlockChain() *core.BlockChain { return s.blockchain }
+
 // Protocols implements node.Service, returning all the currently configured
 // network protocols to start.
 func (s *ATM) Protocols() []p2p.Protocol {
@@ -258,3 +279,7 @@ func (s *ATM) Stop() error {
 
 	return nil
 }
+
+func (s *ATM) EventMux() *event.TypeMux { return s.eventMux }
+func (s *ATM) ChainDb() db.Database     { return s.chainDb }
+func (s *ATM) TxPool() *core.TxPool     { return s.txPool }
