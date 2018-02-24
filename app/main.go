@@ -22,6 +22,70 @@ const (
 var (
 	gitCommit = ""
 	app       = utils.NewApp(gitCommit, "the ATMChain command line interface")
+
+	// flags that configure the node
+	nodeFlags = []cli.Flag{
+		utils.IdentityFlag,
+		utils.UnlockedAccountFlag,
+		utils.PasswordFileFlag,
+		utils.BootnodesFlag,
+		utils.BootnodesV4Flag,
+		utils.BootnodesV5Flag,
+		utils.DataDirFlag,
+		utils.KeyStoreDirFlag,
+		utils.NoUSBFlag,
+		utils.TxPoolNoLocalsFlag,
+		utils.TxPoolJournalFlag,
+		utils.TxPoolRejournalFlag,
+		utils.TxPoolPriceLimitFlag,
+		utils.TxPoolPriceBumpFlag,
+		utils.TxPoolAccountSlotsFlag,
+		utils.TxPoolGlobalSlotsFlag,
+		utils.TxPoolAccountQueueFlag,
+		utils.TxPoolGlobalQueueFlag,
+		utils.TxPoolLifetimeFlag,
+		utils.CacheFlag,
+		utils.TrieCacheGenFlag,
+		utils.ListenPortFlag,
+		utils.MaxPeersFlag,
+		utils.MaxPendingPeersFlag,
+		utils.EtherbaseFlag,
+		utils.GasPriceFlag,
+		utils.MinerThreadsFlag,
+		utils.MiningEnabledFlag,
+		utils.TargetGasLimitFlag,
+		utils.NATFlag,
+		utils.NoDiscoverFlag,
+		utils.NetrestrictFlag,
+		utils.NodeKeyFileFlag,
+		utils.NodeKeyHexFlag,
+		utils.DeveloperFlag,
+		utils.DeveloperPeriodFlag,
+		utils.VMEnableDebugFlag,
+		utils.NetworkIdFlag,
+		utils.RPCCORSDomainFlag,
+		utils.EthStatsURLFlag,
+		utils.FakePoWFlag,
+		utils.NoCompactionFlag,
+		utils.GpoBlocksFlag,
+		utils.GpoPercentileFlag,
+		utils.ExtraDataFlag,
+		configFileFlag,
+	}
+
+	rpcFlags = []cli.Flag{
+		utils.RPCEnabledFlag,
+		utils.RPCListenAddrFlag,
+		utils.RPCPortFlag,
+		utils.RPCApiFlag,
+		utils.WSEnabledFlag,
+		utils.WSListenAddrFlag,
+		utils.WSPortFlag,
+		utils.WSApiFlag,
+		utils.WSAllowedOriginsFlag,
+		utils.IPCDisabledFlag,
+		utils.IPCPathFlag,
+	}
 )
 
 func init() {
@@ -29,6 +93,11 @@ func init() {
 	app.Action = atmapp
 	app.HideVersion = true // we have a command to print the version
 	app.Copyright = "Copyright 2017-2018 The ATMChain Foundation"
+
+	app.Commands = []cli.Command{
+		consoleCommand,
+	}
+
 	app.Before = func(ctx *cli.Context) error {
 		runtime.GOMAXPROCS(runtime.NumCPU())
 		if err := utils.Setup(ctx); err != nil {
@@ -36,6 +105,12 @@ func init() {
 		}
 		// Start system runtime metrics collection
 		//go metrics.CollectProcessMetrics(3 * time.Second)
+		return nil
+	}
+
+	app.After = func(ctx *cli.Context) error {
+		//debug.Exit()
+		utils.Stdin.Close() // Resets terminal mode.
 		return nil
 	}
 }

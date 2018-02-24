@@ -11,7 +11,13 @@ import (
 	"github.com/atmchain/atmapp/p2p"
 	"github.com/atmchain/atmapp/p2p/nat"
 	"github.com/atmchain/atmapp/params"
+	cli "gopkg.in/urfave/cli.v1"
 )
+
+var configFileFlag = cli.StringFlag{
+	Name:  "config",
+	Usage: "TOML configuration file",
+}
 
 func homeDir() string {
 	if home := os.Getenv("HOME"); home != "" {
