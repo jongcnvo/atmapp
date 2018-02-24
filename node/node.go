@@ -165,25 +165,26 @@ func New(conf *Config) (*Node, error) {
 	}
 	// Ensure that the AccountManager method works before the node has started.
 	// We rely on this in cmd/geth.
-	//am, ephemeralKeystore, err := makeAccountManager(conf)
-	//if err != nil {
-	//	return nil, err
-	//}
+	am, ephemeralKeystore, err := makeAccountManager(conf)
+	if err != nil {
+		return nil, err
+	}
+
 	if conf.Logger == nil {
 		conf.Logger = log.New()
 	}
 	// Note: any interaction with Config that would create/touch files
 	// in the data directory or instance directory is delayed until Start.
 	return &Node{
-		//accman:            am,
-		//ephemeralKeystore: ephemeralKeystore,
-		config:       conf,
-		serviceFuncs: []ServiceConstructor{},
-		ipcEndpoint:  conf.IPCEndpoint(),
-		httpEndpoint: conf.HTTPEndpoint(),
-		wsEndpoint:   conf.WSEndpoint(),
-		eventmux:     new(event.TypeMux),
-		log:          conf.Logger,
+		accman:            am,
+		ephemeralKeystore: ephemeralKeystore,
+		config:            conf,
+		serviceFuncs:      []ServiceConstructor{},
+		ipcEndpoint:       conf.IPCEndpoint(),
+		httpEndpoint:      conf.HTTPEndpoint(),
+		wsEndpoint:        conf.WSEndpoint(),
+		eventmux:          new(event.TypeMux),
+		log:               conf.Logger,
 	}, nil
 }
 

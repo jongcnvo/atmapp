@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -133,6 +134,12 @@ func (w *watcher) loop() {
 	}
 }
 
+func (w *watcher) close() {
+	close(w.quit)
+}
+
+func newWatcher(*accountCache) *watcher { return new(watcher) }
+
 type accountsByURL []accounts.Account
 
 func (s accountsByURL) Len() int           { return len(s) }
@@ -240,6 +247,17 @@ type accountCache struct {
 	throttle *time.Timer
 	notify   chan struct{}
 	fileC    fileCache
+}
+
+func newAccountCache(keydir string) (*accountCache, chan struct{}) {
+	ac := &accountCache{
+		keydir: keydir,
+		byAddr: make(map[common.Address][]accounts.Account),
+		notify: make(chan struct{}, 1),
+		fileC:  fileCache{all: set.NewNonTS()},
+	}
+	ac.watcher = newWatcher(ac)
+	return ac, ac.notify
 }
 
 func (ac *accountCache) accounts() []accounts.Account {
@@ -412,6 +430,19 @@ func (ac *accountCache) deleteByFile(path string) {
 	}
 }
 
+func (ac *accountCache) close() {
+	ac.mu.Lock()
+	ac.watcher.close()
+	if ac.throttle != nil {
+		ac.throttle.Stop()
+	}
+	if ac.notify != nil {
+		close(ac.notify)
+		ac.notify = nil
+	}
+	ac.mu.Unlock()
+}
+
 func removeAccount(slice []accounts.Account, elem accounts.Account) []accounts.Account {
 	for i := range slice {
 		if slice[i] == elem {
@@ -556,6 +587,37 @@ type KeyStore struct {
 type unlocked struct {
 	*Key
 	abort chan struct{}
+}
+
+// NewKeyStore creates a keystore for the given directory.
+func NewKeyStore(keydir string, scryptN, scryptP int) *KeyStore {
+	keydir, _ = filepath.Abs(keydir)
+	ks := &KeyStore{storage: &keyStorePassphrase{keydir, scryptN, scryptP}}
+	ks.init(keydir)
+	return ks
+}
+
+func (ks *KeyStore) init(keydir string) {
+	// Lock the mutex since the account cache might call back with events
+	ks.mu.Lock()
+	defer ks.mu.Unlock()
+
+	// Initialize the set of unlocked keys and the account cache
+	ks.unlocked = make(map[common.Address]*unlocked)
+	ks.cache, ks.changes = newAccountCache(keydir)
+
+	// TODO: In order for this finalizer to work, there must be no references
+	// to ks. addressCache doesn't keep a reference but unlocked keys do,
+	// so the finalizer will not trigger until all timed unlocks have expired.
+	runtime.SetFinalizer(ks, func(m *KeyStore) {
+		m.cache.close()
+	})
+	// Create the initial list of wallets from the cache
+	accs := ks.cache.accounts()
+	ks.wallets = make([]accounts.Wallet, len(accs))
+	for i := 0; i < len(accs); i++ {
+		ks.wallets[i] = &keystoreWallet{account: accs[i], keystore: ks}
+	}
 }
 
 // Subscribe implements accounts.Backend, creating an async subscription to

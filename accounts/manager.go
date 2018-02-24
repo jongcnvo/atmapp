@@ -2,6 +2,7 @@ package accounts
 
 import (
 	"reflect"
+	"sort"
 	"sync"
 
 	"github.com/atmchain/atmapp/event"
@@ -21,6 +22,76 @@ type Manager struct {
 	lock sync.RWMutex
 }
 
+// NewManager creates a generic account manager to sign transaction via various
+// supported backends.
+func NewManager(backends ...Backend) *Manager {
+	// Retrieve the initial list of wallets from the backends and sort by URL
+	var wallets []Wallet
+	for _, backend := range backends {
+		wallets = merge(wallets, backend.Wallets()...)
+	}
+	// Subscribe to wallet notifications from all backends
+	updates := make(chan WalletEvent, 4*len(backends))
+
+	subs := make([]event.Subscription, len(backends))
+	for i, backend := range backends {
+		subs[i] = backend.Subscribe(updates)
+	}
+	// Assemble the account manager and return
+	am := &Manager{
+		backends: make(map[reflect.Type][]Backend),
+		updaters: subs,
+		updates:  updates,
+		wallets:  wallets,
+		quit:     make(chan chan error),
+	}
+	for _, backend := range backends {
+		kind := reflect.TypeOf(backend)
+		am.backends[kind] = append(am.backends[kind], backend)
+	}
+	go am.update()
+
+	return am
+}
+
+// update is the wallet event loop listening for notifications from the backends
+// and updating the cache of wallets.
+func (am *Manager) update() {
+	// Close all subscriptions when the manager terminates
+	defer func() {
+		am.lock.Lock()
+		for _, sub := range am.updaters {
+			sub.Unsubscribe()
+		}
+		am.updaters = nil
+		am.lock.Unlock()
+	}()
+
+	// Loop until termination
+	for {
+		select {
+		case event := <-am.updates:
+			// Wallet event arrived, update local cache
+			am.lock.Lock()
+			switch event.Kind {
+			case WalletArrived:
+				am.wallets = merge(am.wallets, event.Wallet)
+			case WalletDropped:
+				am.wallets = drop(am.wallets, event.Wallet)
+			}
+			am.lock.Unlock()
+
+			// Notify any listeners of the event
+			am.feed.Send(event)
+
+		case errc := <-am.quit:
+			// Manager terminating, return
+			errc <- nil
+			return
+		}
+	}
+}
+
 // Subscribe creates an async subscription to receive notifications when the
 // manager detects the arrival or departure of a wallet from any of its backends.
 func (am *Manager) Subscribe(sink chan<- WalletEvent) event.Subscription {
@@ -30,4 +101,34 @@ func (am *Manager) Subscribe(sink chan<- WalletEvent) event.Subscription {
 // Backends retrieves the backend(s) with the given type from the account manager.
 func (am *Manager) Backends(kind reflect.Type) []Backend {
 	return am.backends[kind]
+}
+
+// merge is a sorted analogue of append for wallets, where the ordering of the
+// origin list is preserved by inserting new wallets at the correct position.
+//
+// The original slice is assumed to be already sorted by URL.
+func merge(slice []Wallet, wallets ...Wallet) []Wallet {
+	for _, wallet := range wallets {
+		n := sort.Search(len(slice), func(i int) bool { return slice[i].URL().Cmp(wallet.URL()) >= 0 })
+		if n == len(slice) {
+			slice = append(slice, wallet)
+			continue
+		}
+		slice = append(slice[:n], append([]Wallet{wallet}, slice[n:]...)...)
+	}
+	return slice
+}
+
+// drop is the couterpart of merge, which looks up wallets from within the sorted
+// cache and removes the ones specified.
+func drop(slice []Wallet, wallets ...Wallet) []Wallet {
+	for _, wallet := range wallets {
+		n := sort.Search(len(slice), func(i int) bool { return slice[i].URL().Cmp(wallet.URL()) >= 0 })
+		if n == len(slice) {
+			// Wallet not found, may happen during startup
+			continue
+		}
+		slice = append(slice[:n], slice[n+1:]...)
+	}
+	return slice
 }

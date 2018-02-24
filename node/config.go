@@ -1,17 +1,21 @@
 package node
 
 import (
+	"crypto/ecdsa"
+	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+
+	"github.com/atmchain/atmapp/accounts"
+	"github.com/atmchain/atmapp/accounts/keystore"
 	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/crypto"
 	"github.com/atmchain/atmapp/log"
 	"github.com/atmchain/atmapp/p2p"
 	"github.com/atmchain/atmapp/p2p/discover"
-	"crypto/ecdsa"
-	"fmt"
-	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
 )
 
 // Config represents a small collection of configuration values to fine tune the
@@ -293,4 +297,55 @@ func (c *Config) parsePersistentNodes(path string) []*discover.Node {
 		nodes = append(nodes, node)
 	}
 	return nodes
+}
+
+// AccountConfig determines the settings for scrypt and keydirectory
+func (c *Config) AccountConfig() (int, int, string, error) {
+	scryptN := keystore.StandardScryptN
+	scryptP := keystore.StandardScryptP
+	if c.UseLightweightKDF {
+		scryptN = keystore.LightScryptN
+		scryptP = keystore.LightScryptP
+	}
+
+	var (
+		keydir string
+		err    error
+	)
+	switch {
+	case filepath.IsAbs(c.KeyStoreDir):
+		keydir = c.KeyStoreDir
+	case c.DataDir != "":
+		if c.KeyStoreDir == "" {
+			keydir = filepath.Join(c.DataDir, datadirDefaultKeyStore)
+		} else {
+			keydir, err = filepath.Abs(c.KeyStoreDir)
+		}
+	case c.KeyStoreDir != "":
+		keydir, err = filepath.Abs(c.KeyStoreDir)
+	}
+	return scryptN, scryptP, keydir, err
+}
+
+func makeAccountManager(conf *Config) (*accounts.Manager, string, error) {
+	scryptN, scryptP, keydir, err := conf.AccountConfig()
+	var ephemeral string
+	if keydir == "" {
+		// There is no datadir.
+		keydir, err = ioutil.TempDir("", "go-ethereum-keystore")
+		ephemeral = keydir
+	}
+
+	if err != nil {
+		return nil, "", err
+	}
+	if err := os.MkdirAll(keydir, 0700); err != nil {
+		return nil, "", err
+	}
+	// Assemble the account manager and supported backends
+	backends := []accounts.Backend{
+		keystore.NewKeyStore(keydir, scryptN, scryptP),
+	}
+
+	return accounts.NewManager(backends...), ephemeral, nil
 }

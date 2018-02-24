@@ -166,3 +166,11 @@ func CreateAddress(b common.Address, nonce uint64) common.Address {
 	data, _ := rlp.EncodeToBytes([]interface{}{b, nonce})
 	return common.BytesToAddress(Keccak256(data)[12:])
 }
+
+// ToECDSAUnsafe blindly converts a binary blob to a private key. It should almost
+// never be used unless you are sure the input is valid and want to avoid hitting
+// errors due to bad origin encoding (0 prefixes cut off).
+func ToECDSAUnsafe(d []byte) *ecdsa.PrivateKey {
+	priv, _ := toECDSA(d, false)
+	return priv
+}
