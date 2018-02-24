@@ -72,6 +72,14 @@ type watcher struct {
 	quit     chan struct{}
 }
 
+func newWatcher(ac *accountCache) *watcher {
+	return &watcher{
+		ac:   ac,
+		ev:   make(chan notify.EventInfo, 10),
+		quit: make(chan struct{}),
+	}
+}
+
 // starts the watcher loop in the background.
 // Start a watcher in the background if that's not already in progress.
 // The caller must hold w.ac.mu.
@@ -137,8 +145,6 @@ func (w *watcher) loop() {
 func (w *watcher) close() {
 	close(w.quit)
 }
-
-func newWatcher(*accountCache) *watcher { return new(watcher) }
 
 type accountsByURL []accounts.Account
 
