@@ -8,3 +8,6 @@ build/_vendor/pkg
 /vendor/github.com
 /vendor/golang.org
 /vendor/gopkg.in
+
+/.vscode
+/app/debug
