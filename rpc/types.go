@@ -13,6 +13,13 @@ import (
 	"github.com/atmchain/atmapp/log"
 )
 
+type BlockNumber int64
+
+const (
+	PendingBlockNumber = BlockNumber(-2)
+	LatestBlockNumber  = BlockNumber(-1)
+)
+
 // issued when a request is received after the server is issued to stop.
 type shutdownError struct{}
 

@@ -22,6 +22,7 @@ import (
 	"github.com/atmchain/atmapp/params"
 	"github.com/atmchain/atmapp/rlp"
 	"github.com/atmchain/atmapp/rpc"
+	"github.com/atmchain/atmapp/utils/atmapi"
 )
 
 type ATM struct {
@@ -47,7 +48,7 @@ type ATM struct {
 	bloomRequests chan chan *bloombits.Retrieval // Channel receiving bloom data retrieval requests
 	bloomIndexer  *core.ChainIndexer             // Bloom indexer operating during block imports
 
-	//ApiBackend *ATMApiBackend
+	ApiBackend *ATMApiBackend
 
 	miner    *miner.Miner
 	gasPrice *big.Int
@@ -123,7 +124,7 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 	atm.miner = miner.New(atm, atm.chainConfig, atm.EventMux(), atm.engine)
 	atm.miner.SetExtra(makeExtraData(config.ExtraData))
 
-	//eth.ApiBackend = &EthApiBackend{eth, nil}
+	atm.ApiBackend = &ATMApiBackend{atm}
 	gpoParams := config.GPO
 	if gpoParams.Default == nil {
 		gpoParams.Default = config.GasPrice
@@ -174,43 +175,45 @@ func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainCo
 // APIs returns the collection of RPC services the ATM package offers.
 // NOTE, some of these services probably need to be moved to somewhere else.
 func (s *ATM) APIs() []rpc.API {
-	//apis := ethapi.GetAPIs(s.ApiBackend)
+	apis := atmapi.GetAPIs(s.ApiBackend)
 
 	// Append any APIs exposed explicitly by the consensus engine
-	//apis = append(apis, s.engine.APIs(s.BlockChain())...)
+	apis = append(apis, s.engine.APIs(s.BlockChain())...)
 
 	// Append all the local APIs and return
-	/*return append(apis, []rpc.API{
-		{
-			Namespace: "eth",
+	return append(apis, []rpc.API{
+		/*{
+			Namespace: "atm",
 			Version:   "1.0",
 			Service:   NewPublicATMAPI(s),
 			Public:    true,
 		}, {
-			Namespace: "eth",
+			Namespace: "atm",
 			Version:   "1.0",
 			Service:   NewPublicMinerAPI(s),
 			Public:    true,
 		}, {
-			Namespace: "eth",
+			Namespace: "atm",
 			Version:   "1.0",
 			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
 			Public:    true,
 		}, {
-			Namespace: "miner",
+			Namespace: "atm",
 			Version:   "1.0",
 			Service:   NewPrivateMinerAPI(s),
 			Public:    false,
 		}, {
-			Namespace: "eth",
+			Namespace: "atm",
 			Version:   "1.0",
 			Service:   filters.NewPublicFilterAPI(s.ApiBackend, false),
 			Public:    true,
-		}, {
+		}, */
+		{
 			Namespace: "admin",
 			Version:   "1.0",
 			Service:   NewPrivateAdminAPI(s),
-		}, {
+		},
+		/*, {
 			Namespace: "debug",
 			Version:   "1.0",
 			Service:   NewPublicDebugAPI(s),
@@ -224,10 +227,8 @@ func (s *ATM) APIs() []rpc.API {
 			Version:   "1.0",
 			Service:   s.netRPCService,
 			Public:    true,
-		},
+		},*/
 	}...)
-	*/
-	return nil
 }
 
 func (s *ATM) BlockChain() *core.BlockChain { return s.blockchain }
@@ -282,6 +283,7 @@ func (s *ATM) Stop() error {
 	return nil
 }
 
-func (s *ATM) EventMux() *event.TypeMux { return s.eventMux }
-func (s *ATM) ChainDb() db.Database     { return s.chainDb }
-func (s *ATM) TxPool() *core.TxPool     { return s.txPool }
+func (s *ATM) EventMux() *event.TypeMux          { return s.eventMux }
+func (s *ATM) ChainDb() db.Database              { return s.chainDb }
+func (s *ATM) TxPool() *core.TxPool              { return s.txPool }
+func (s *ATM) AccountManager() *accounts.Manager { return s.accountManager }

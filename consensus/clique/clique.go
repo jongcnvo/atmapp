@@ -1,6 +1,14 @@
 package clique
 
 import (
+	"bytes"
+	"errors"
+	"math/big"
+	"math/rand"
+	"sync"
+	"time"
+
+	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/consensus"
 	"github.com/atmchain/atmapp/core/state"
 	"github.com/atmchain/atmapp/core/types"
@@ -9,15 +17,8 @@ import (
 	"github.com/atmchain/atmapp/log"
 	"github.com/atmchain/atmapp/params"
 	"github.com/atmchain/atmapp/rlp"
-	"bytes"
-	"errors"
+	"github.com/atmchain/atmapp/rpc"
 	lru "github.com/hashicorp/golang-lru"
-	"math/big"
-	"math/rand"
-	"sync"
-	"time"
-
-	"github.com/atmchain/atmapp/common"
 )
 
 const (
@@ -620,4 +621,15 @@ func (c *Clique) verifySeal(chain consensus.ChainReader, header *types.Header, p
 		return errInvalidDifficulty
 	}
 	return nil
+}
+
+// APIs implements consensus.Engine, returning the user facing RPC API to allow
+// controlling the signer voting.
+func (c *Clique) APIs(chain consensus.ChainReader) []rpc.API {
+	return []rpc.API{{
+		Namespace: "clique",
+		Version:   "1.0",
+		Service:   &API{chain: chain, clique: c},
+		Public:    false,
+	}}
 }

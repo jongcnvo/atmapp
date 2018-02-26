@@ -1,15 +1,17 @@
 package miner
 
 import (
+	"fmt"
 	"github.com/atmchain/atmapp/atm/downloader"
 	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/consensus"
 	"github.com/atmchain/atmapp/core"
+	"github.com/atmchain/atmapp/core/state"
+	"github.com/atmchain/atmapp/core/types"
 	"github.com/atmchain/atmapp/db"
 	"github.com/atmchain/atmapp/event"
 	"github.com/atmchain/atmapp/log"
 	"github.com/atmchain/atmapp/params"
-	"fmt"
 	"sync/atomic"
 )
 
@@ -115,10 +117,24 @@ func (self *Miner) Mining() bool {
 	return atomic.LoadInt32(&self.mining) > 0
 }
 
+// Pending returns the currently pending block and associated state.
+func (self *Miner) Pending() (*types.Block, *state.StateDB) {
+	return self.worker.pending()
+}
+
 func (self *Miner) SetExtra(extra []byte) error {
 	if uint64(len(extra)) > params.MaximumExtraDataSize {
 		return fmt.Errorf("Extra exceeds max length. %d > %v", len(extra), params.MaximumExtraDataSize)
 	}
 	self.worker.setExtra(extra)
 	return nil
+}
+
+// PendingBlock returns the currently pending block.
+//
+// Note, to access both the pending block and the pending state
+// simultaneously, please use Pending(), as the pending state can
+// change between multiple method calls
+func (self *Miner) PendingBlock() *types.Block {
+	return self.worker.pendingBlock()
 }

@@ -4,12 +4,25 @@ import (
 	"math/big"
 )
 
+var (
+	tt255     = BigPow(2, 255)
+	tt256     = BigPow(2, 256)
+	tt256m1   = new(big.Int).Sub(tt256, big.NewInt(1))
+	MaxBig256 = new(big.Int).Set(tt256m1)
+)
+
 const (
 	// number of bits in a big.Word, 32 bits or 64 bits
 	wordBits = 32 << (uint64(^big.Word(0)) >> 63)
 	// number of bytes in a big.Word
 	wordBytes = wordBits / 8
 )
+
+// BigPow returns a ** b as a big integer.
+func BigPow(a, b int64) *big.Int {
+	r := big.NewInt(a)
+	return r.Exp(r, big.NewInt(b), nil)
+}
 
 // ReadBits encodes the absolute value of bigint as big-endian bytes. Callers must ensure
 // that buf has enough space. If buf is too short the result will be incomplete.

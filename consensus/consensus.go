@@ -1,10 +1,11 @@
 package consensus
 
 import (
+	"errors"
 	"github.com/atmchain/atmapp/core/state"
 	"github.com/atmchain/atmapp/core/types"
 	"github.com/atmchain/atmapp/params"
-	"errors"
+	"github.com/atmchain/atmapp/rpc"
 	"math/big"
 
 	"github.com/atmchain/atmapp/common"
@@ -92,5 +93,5 @@ type Engine interface {
 	CalcDifficulty(chain ChainReader, time uint64, parent *types.Header) *big.Int
 
 	// APIs returns the RPC APIs this consensus engine provides.
-	//APIs(chain ChainReader) []rpc.API
+	APIs(chain ChainReader) []rpc.API
 }

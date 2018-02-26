@@ -1,8 +1,8 @@
 package params
 
 import (
-	"github.com/atmchain/atmapp/common"
 	"fmt"
+	"github.com/atmchain/atmapp/common"
 	"math/big"
 )
 
@@ -186,3 +186,14 @@ const (
 	Bn256PairingBaseGas     uint64 = 100000 // Base price for an elliptic curve pairing check
 	Bn256PairingPerPointGas uint64 = 80000  // Per-point price for an elliptic curve pairing check
 )
+
+// Rules wraps ChainConfig and is merely syntatic sugar or can be used for functions
+// that do not have or require information about the block.
+//
+// Rules is a one time interface meaning that it shouldn't be used in between transition
+// phases.
+type Rules struct {
+	ChainId                                   *big.Int
+	IsHomestead, IsEIP150, IsEIP155, IsEIP158 bool
+	IsByzantium                               bool
+}

@@ -519,3 +519,33 @@ func (self *worker) setExtra(extra []byte) {
 	defer self.mu.Unlock()
 	self.extra = extra
 }
+
+func (self *worker) pending() (*types.Block, *state.StateDB) {
+	self.currentMu.Lock()
+	defer self.currentMu.Unlock()
+
+	if atomic.LoadInt32(&self.mining) == 0 {
+		return types.NewBlock(
+			self.current.header,
+			self.current.txs,
+			nil,
+			self.current.receipts,
+		), self.current.state.Copy()
+	}
+	return self.current.Block, self.current.state.Copy()
+}
+
+func (self *worker) pendingBlock() *types.Block {
+	self.currentMu.Lock()
+	defer self.currentMu.Unlock()
+
+	if atomic.LoadInt32(&self.mining) == 0 {
+		return types.NewBlock(
+			self.current.header,
+			self.current.txs,
+			nil,
+			self.current.receipts,
+		)
+	}
+	return self.current.Block
+}

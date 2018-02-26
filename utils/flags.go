@@ -114,6 +114,22 @@ func makeDatabaseHandles() int {
 	return limit / 2 // Leave half for networking and other stuff
 }
 
+// SetNodeConfig applies node-related command line flags to the config.
+func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
+	setHTTP(ctx, cfg)
+}
+
+// setHTTP creates the HTTP RPC listener interface string from the set
+// command line flags, returning empty if the HTTP endpoint is disabled.
+func setHTTP(ctx *cli.Context, cfg *node.Config) {
+	if ctx.GlobalBool(RPCEnabledFlag.Name) && cfg.HTTPHost == "" {
+		cfg.HTTPHost = "127.0.0.1"
+		if ctx.GlobalIsSet(RPCListenAddrFlag.Name) {
+			cfg.HTTPHost = ctx.GlobalString(RPCListenAddrFlag.Name)
+		}
+	}
+}
+
 func SetATMConfig(ctx *cli.Context, stack *node.Node, cfg *atm.Config) {
 	cfg.DatabaseHandles = makeDatabaseHandles()
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/signal"
 	"runtime"
+	"sort"
 
 	"github.com/atmchain/atmapp/accounts"
 	"github.com/atmchain/atmapp/accounts/keystore"
@@ -97,6 +98,11 @@ func init() {
 	app.Commands = []cli.Command{
 		consoleCommand,
 	}
+	sort.Sort(cli.CommandsByName(app.Commands))
+
+	app.Flags = append(app.Flags, nodeFlags...)
+	app.Flags = append(app.Flags, rpcFlags...)
+	app.Flags = append(app.Flags, consoleFlags...)
 
 	app.Before = func(ctx *cli.Context) error {
 		runtime.GOMAXPROCS(runtime.NumCPU())
@@ -148,6 +154,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 	}
 
 	// Create node instance
+	utils.SetNodeConfig(ctx, &cfg.Node)
 	stack, err := node.New(&cfg.Node)
 	if err != nil {
 		return nil
