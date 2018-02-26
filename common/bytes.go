@@ -3,6 +3,7 @@ package common
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"strconv"
 )
 
@@ -108,4 +109,14 @@ func MustDecode(input string) []byte {
 		panic(err)
 	}
 	return dec
+}
+
+// EncodeBig encodes bigint as a hex string with 0x prefix.
+// The sign of the integer is ignored.
+func EncodeBig(bigint *big.Int) string {
+	nbits := bigint.BitLen()
+	if nbits == 0 {
+		return "0x0"
+	}
+	return fmt.Sprintf("%#x", bigint)
 }

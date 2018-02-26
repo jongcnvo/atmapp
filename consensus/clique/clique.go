@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/atmchain/atmapp/accounts"
 	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/consensus"
 	"github.com/atmchain/atmapp/core/state"
@@ -91,7 +92,9 @@ type Account struct {
 	URL     URL            `json:"url"`     // Optional resource locator within a backend
 }
 
-type SignerFn func(Account, []byte) ([]byte, error)
+// SignerFn is a signer callback function to request a hash to be signed by a
+// backing account.
+type SignerFn func(accounts.Account, []byte) ([]byte, error)
 
 // sigHash returns the hash which is used as input for the proof-of-authority
 // signing. It is the hash of the entire header apart from the 65 byte signature
@@ -387,6 +390,16 @@ func (c *Clique) Finalize(chain consensus.ChainReader, header *types.Header, sta
 
 	// Assemble and return the final block for sealing
 	return types.NewBlock(header, txs, nil, receipts), nil
+}
+
+// Authorize injects a private key into the consensus engine to mint new blocks
+// with.
+func (c *Clique) Authorize(signer common.Address, signFn SignerFn) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	c.signer = signer
+	c.signFn = signFn
 }
 
 // verifyHeader checks whether a header conforms to the consensus rules.The

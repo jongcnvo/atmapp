@@ -642,3 +642,12 @@ func AbsolutePath(Datadir string, filename string) string {
 	}
 	return filepath.Join(Datadir, filename)
 }
+
+// GlobalBig returns the value of a BigFlag from the global flag set.
+func GlobalBig(ctx *cli.Context, name string) *big.Int {
+	val := ctx.GlobalGeneric(name)
+	if val == nil {
+		return nil
+	}
+	return (*big.Int)(val.(*bigValue))
+}

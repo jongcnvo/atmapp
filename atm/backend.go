@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"runtime"
 	"sync"
+	"sync/atomic"
 
 	"github.com/atmchain/atmapp/accounts"
 	"github.com/atmchain/atmapp/common"
@@ -263,6 +264,31 @@ func (s *ATM) ATMbase() (eb common.Address, err error) {
 	return common.Address{}, fmt.Errorf("atmbase must be explicitly specified")
 }
 
+func (s *ATM) StartMining(local bool) error {
+	eb, err := s.ATMbase()
+	if err != nil {
+		log.Error("Cannot start mining without atmbase", "err", err)
+		return fmt.Errorf("atmrbase missing: %v", err)
+	}
+	if clique, ok := s.engine.(*clique.Clique); ok {
+		wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
+		if wallet == nil || err != nil {
+			log.Error("ATMbase account unavailable locally", "err", err)
+			return fmt.Errorf("signer missing: %v", err)
+		}
+		clique.Authorize(eb, wallet.SignHash)
+	}
+	if local {
+		// If local (CPU) mining is started, we can disable the transaction rejection
+		// mechanism introduced to speed sync times. CPU mining on mainnet is ludicrous
+		// so noone will ever hit this path, whereas marking sync done on CPU mining
+		// will ensure that private networks work in single miner mode too.
+		atomic.StoreUint32(&s.protocolManager.acceptTxs, 1)
+	}
+	go s.miner.Start(eb)
+	return nil
+}
+
 // Start implements node.Service, starting all internal goroutines needed by the
 // protocol implementation.
 func (s *ATM) Start(srvr *p2p.Server) error {
@@ -307,6 +333,7 @@ func (s *ATM) Stop() error {
 	return nil
 }
 
+func (s *ATM) Engine() consensus.Engine          { return s.engine }
 func (s *ATM) EventMux() *event.TypeMux          { return s.eventMux }
 func (s *ATM) ChainDb() db.Database              { return s.chainDb }
 func (s *ATM) TxPool() *core.TxPool              { return s.txPool }

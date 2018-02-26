@@ -142,3 +142,18 @@ func (am *Manager) Wallets() []Wallet {
 	copy(cpy, am.wallets)
 	return cpy
 }
+
+// Find attempts to locate the wallet corresponding to a specific account. Since
+// accounts can be dynamically added to and removed from wallets, this method has
+// a linear runtime in the number of wallets.
+func (am *Manager) Find(account Account) (Wallet, error) {
+	am.lock.RLock()
+	defer am.lock.RUnlock()
+
+	for _, wallet := range am.wallets {
+		if wallet.Contains(account) {
+			return wallet, nil
+		}
+	}
+	return nil, ErrUnknownAccount
+}

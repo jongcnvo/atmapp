@@ -292,6 +292,37 @@ func (l *txPricedList) Underpriced(tx *types.Transaction, local *accountSet) boo
 	return cheapest.GasPrice().Cmp(tx.GasPrice()) >= 0
 }
 
+// Cap finds all the transactions below the given price threshold, drops them
+// from the priced list and returs them for further removal from the entire pool.
+func (l *txPricedList) Cap(threshold *big.Int, local *accountSet) types.Transactions {
+	drop := make(types.Transactions, 0, 128) // Remote underpriced transactions to drop
+	save := make(types.Transactions, 0, 64)  // Local underpriced transactions to keep
+
+	for len(*l.items) > 0 {
+		// Discard stale transactions if found during cleanup
+		tx := heap.Pop(l.items).(*types.Transaction)
+		if _, ok := (*l.all)[tx.Hash()]; !ok {
+			l.stales--
+			continue
+		}
+		// Stop the discards if we've reached the threshold
+		if tx.GasPrice().Cmp(threshold) >= 0 {
+			save = append(save, tx)
+			break
+		}
+		// Non stale transaction found, discard unless local
+		if local.containsTx(tx) {
+			save = append(save, tx)
+		} else {
+			drop = append(drop, tx)
+		}
+	}
+	for _, tx := range save {
+		heap.Push(l.items, tx)
+	}
+	return drop
+}
+
 // Discard finds a number of most underpriced transactions, removes them from the
 // priced list and returns them for further removal from the entire pool.
 func (l *txPricedList) Discard(count int, local *accountSet) types.Transactions {
