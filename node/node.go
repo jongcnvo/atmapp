@@ -438,7 +438,7 @@ func (n *Node) startInProc(apis []rpc.API) error {
 // stopInProc terminates the in-process RPC endpoint.
 func (n *Node) stopInProc() {
 	if n.inprocHandler != nil {
-		//n.inprocHandler.Stop()
+		n.inprocHandler.Stop()
 		n.inprocHandler = nil
 	}
 }
@@ -469,7 +469,7 @@ func (n *Node) startIPC(apis []rpc.API) error {
 		n.log.Info(fmt.Sprintf("IPC endpoint opened: %s", n.ipcEndpoint))
 
 		for {
-			_, err := listener.Accept()
+			conn, err := listener.Accept()
 			if err != nil {
 				// Terminate if the listener was closed
 				n.lock.RLock()
@@ -482,7 +482,7 @@ func (n *Node) startIPC(apis []rpc.API) error {
 				n.log.Error(fmt.Sprintf("IPC accept failed: %v", err))
 				continue
 			}
-			//go handler.ServeCodec(rpc.NewJSONCodec(conn), rpc.OptionMethodInvocation|rpc.OptionSubscriptions)
+			go handler.ServeCodec(rpc.NewJSONCodec(conn), rpc.OptionMethodInvocation|rpc.OptionSubscriptions)
 		}
 	}()
 	// All listeners booted successfully
@@ -501,7 +501,7 @@ func (n *Node) stopIPC() {
 		n.log.Info(fmt.Sprintf("IPC endpoint closed: %s", n.ipcEndpoint))
 	}
 	if n.ipcHandler != nil {
-		//n.ipcHandler.Stop()
+		n.ipcHandler.Stop()
 		n.ipcHandler = nil
 	}
 }
@@ -535,7 +535,8 @@ func (n *Node) startHTTP(endpoint string, apis []rpc.API, modules []string, cors
 	if listener, err = net.Listen("tcp", endpoint); err != nil {
 		return err
 	}
-	//go rpc.NewHTTPServer(cors, handler).Serve(listener)
+
+	go rpc.NewHTTPServer(cors, handler).Serve(listener)
 	n.log.Info(fmt.Sprintf("HTTP endpoint opened: http://%s", endpoint))
 
 	// All listeners booted successfully
@@ -555,7 +556,7 @@ func (n *Node) stopHTTP() {
 		n.log.Info(fmt.Sprintf("HTTP endpoint closed: http://%s", n.httpEndpoint))
 	}
 	if n.httpHandler != nil {
-		//n.httpHandler.Stop()
+		n.httpHandler.Stop()
 		n.httpHandler = nil
 	}
 }
@@ -589,7 +590,7 @@ func (n *Node) startWS(endpoint string, apis []rpc.API, modules []string, wsOrig
 	if listener, err = net.Listen("tcp", endpoint); err != nil {
 		return err
 	}
-	//go rpc.NewWSServer(wsOrigins, handler).Serve(listener)
+	go rpc.NewWSServer(wsOrigins, handler).Serve(listener)
 	n.log.Info(fmt.Sprintf("WebSocket endpoint opened: ws://%s", listener.Addr()))
 
 	// All listeners booted successfully
@@ -609,7 +610,7 @@ func (n *Node) stopWS() {
 		n.log.Info(fmt.Sprintf("WebSocket endpoint closed: ws://%s", n.wsEndpoint))
 	}
 	if n.wsHandler != nil {
-		//n.wsHandler.Stop()
+		n.wsHandler.Stop()
 		n.wsHandler = nil
 	}
 }

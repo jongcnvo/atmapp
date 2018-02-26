@@ -165,6 +165,12 @@
 			"revisionTime": "2017-11-30T10:32:05Z"
 		},
 		{
+			"checksumSHA1": "62AWD68bDmLyRunZGJ99J7bNceA=",
+			"path": "github.com/rs/cors",
+			"revision": "36f00aa91d31dac5aeba5cee361f0e5d395116ac",
+			"revisionTime": "2018-02-24T20:03:55Z"
+		},
+		{
 			"checksumSHA1": "l9hsW4atYllqlNjJUwHb6lyLn+I=",
 			"path": "github.com/syndtr/goleveldb/leveldb",
 			"revision": "34011bf325bce385408353a30b101fe5e923eb6e",
@@ -263,6 +269,12 @@
 		{
 			"checksumSHA1": "barUU39reQ7LdgYLA323hQ/UGy4=",
 			"path": "golang.org/x/net/html/charset",
+			"revision": "0ed95abb35c445290478a5348a7b38bb154135fd",
+			"revisionTime": "2018-01-24T06:08:02Z"
+		},
+		{
+			"checksumSHA1": "7EZyXN0EmZLgGxZxK01IJua4c8o=",
+			"path": "golang.org/x/net/websocket",
 			"revision": "0ed95abb35c445290478a5348a7b38bb154135fd",
 			"revisionTime": "2018-01-24T06:08:02Z"
 		},
