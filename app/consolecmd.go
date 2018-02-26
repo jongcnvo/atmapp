@@ -32,7 +32,7 @@ func localConsole(ctx *cli.Context) error {
 	// Attach to the newly started node and start the JavaScript console
 	client, err := node.Attach()
 	if err != nil {
-		utils.Fatalf("Failed to attach to the inproc geth: %v", err)
+		utils.Fatalf("Failed to attach to the inproc atmapp: %v", err)
 	}
 	config := utils.Config{
 		DataDir: utils.MakeDataDir(ctx),

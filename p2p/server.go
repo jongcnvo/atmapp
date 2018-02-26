@@ -1147,3 +1147,95 @@ func (t waitExpireTask) Do(*Server) {
 func (t waitExpireTask) String() string {
 	return fmt.Sprintf("wait for dial hist expire (%v)", t.Duration)
 }
+
+// PeerCount returns the number of connected peers.
+func (srv *Server) PeerCount() int {
+	var count int
+	select {
+	case srv.peerOp <- func(ps map[discover.NodeID]*Peer) { count = len(ps) }:
+		<-srv.peerOpDone
+	case <-srv.quit:
+	}
+	return count
+}
+
+// Peers returns all connected peers.
+func (srv *Server) Peers() []*Peer {
+	var ps []*Peer
+	select {
+	// Note: We'd love to put this function into a variable but
+	// that seems to cause a weird compiler error in some
+	// environments.
+	case srv.peerOp <- func(peers map[discover.NodeID]*Peer) {
+		for _, p := range peers {
+			ps = append(ps, p)
+		}
+	}:
+		<-srv.peerOpDone
+	case <-srv.quit:
+	}
+	return ps
+}
+
+// PeersInfo returns an array of metadata objects describing connected peers.
+func (srv *Server) PeersInfo() []*PeerInfo {
+	// Gather all the generic and sub-protocol specific infos
+	infos := make([]*PeerInfo, 0, srv.PeerCount())
+	for _, peer := range srv.Peers() {
+		if peer != nil {
+			infos = append(infos, peer.Info())
+		}
+	}
+	// Sort the result array alphabetically by node identifier
+	for i := 0; i < len(infos); i++ {
+		for j := i + 1; j < len(infos); j++ {
+			if infos[i].ID > infos[j].ID {
+				infos[i], infos[j] = infos[j], infos[i]
+			}
+		}
+	}
+	return infos
+}
+
+// NodeInfo represents a short summary of the information known about the host.
+type NodeInfo struct {
+	ID    string `json:"id"`    // Unique node identifier (also the encryption key)
+	Name  string `json:"name"`  // Name of the node, including client type, version, OS, custom data
+	Enode string `json:"enode"` // Enode URL for adding this peer from remote peers
+	IP    string `json:"ip"`    // IP address of the node
+	Ports struct {
+		Discovery int `json:"discovery"` // UDP listening port for discovery protocol
+		Listener  int `json:"listener"`  // TCP listening port for RLPx
+	} `json:"ports"`
+	ListenAddr string                 `json:"listenAddr"`
+	Protocols  map[string]interface{} `json:"protocols"`
+}
+
+// NodeInfo gathers and returns a collection of metadata known about the host.
+func (srv *Server) NodeInfo() *NodeInfo {
+	node := srv.Self()
+
+	// Gather and assemble the generic node infos
+	info := &NodeInfo{
+		Name:       srv.Name,
+		Enode:      node.String(),
+		ID:         node.ID.String(),
+		IP:         node.IP.String(),
+		ListenAddr: srv.ListenAddr,
+		Protocols:  make(map[string]interface{}),
+	}
+	info.Ports.Discovery = int(node.UDP)
+	info.Ports.Listener = int(node.TCP)
+
+	// Gather all the running protocol infos (only once per protocol type)
+	for _, proto := range srv.Protocols {
+		if _, ok := info.Protocols[proto.Name]; !ok {
+			nodeInfo := interface{}("unknown")
+			if query := proto.NodeInfo; query != nil {
+				nodeInfo = proto.NodeInfo()
+			}
+			info.Protocols[proto.Name] = nodeInfo
+		}
+	}
+	return info
+}

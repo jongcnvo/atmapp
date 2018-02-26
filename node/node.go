@@ -392,16 +392,18 @@ func (n *Node) startRPC(services map[reflect.Type]Service) error {
 // apis returns the collection of RPC descriptors this node offers.
 func (n *Node) apis() []rpc.API {
 	return []rpc.API{
+		/*{
+			Namespace: "admin",
+			Version:   "1.0",
+			Service:   NewPrivateAdminAPI(n),
+		}, */
 		{
 			Namespace: "admin",
 			Version:   "1.0",
-			//Service:   NewPrivateAdminAPI(n),
-		}, {
-			Namespace: "admin",
-			Version:   "1.0",
-			//Service:   NewPublicAdminAPI(n),
-			Public: true,
-		}, {
+			Service:   NewPublicAdminAPI(n),
+			Public:    true,
+		},
+		/*, {
 			Namespace: "debug",
 			Version:   "1.0",
 			//Service:   debug.Handler,
@@ -415,7 +417,7 @@ func (n *Node) apis() []rpc.API {
 			Version:   "1.0",
 			//Service:   NewPublicWeb3API(n),
 			Public: true,
-		},
+		},*/
 	}
 }
 
@@ -424,9 +426,9 @@ func (n *Node) startInProc(apis []rpc.API) error {
 	// Register all the APIs exposed by the services
 	handler := rpc.NewServer()
 	for _, api := range apis {
-		//if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
-		//	return err
-		//}
+		if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
+			return err
+		}
 		n.log.Debug(fmt.Sprintf("InProc registered %T under '%s'", api.Service, api.Namespace))
 	}
 	n.inprocHandler = handler
@@ -450,9 +452,9 @@ func (n *Node) startIPC(apis []rpc.API) error {
 	// Register all the APIs exposed by the services
 	handler := rpc.NewServer()
 	for _, api := range apis {
-		//if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
-		//	return err
-		//}
+		if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
+			return err
+		}
 		n.log.Debug(fmt.Sprintf("IPC registered %T under '%s'", api.Service, api.Namespace))
 	}
 	// All APIs registered, start the IPC listener
@@ -519,9 +521,9 @@ func (n *Node) startHTTP(endpoint string, apis []rpc.API, modules []string, cors
 	handler := rpc.NewServer()
 	for _, api := range apis {
 		if whitelist[api.Namespace] || (len(whitelist) == 0 && api.Public) {
-			//if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
-			//	return err
-			//}
+			if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
+				return err
+			}
 			n.log.Debug(fmt.Sprintf("HTTP registered %T under '%s'", api.Service, api.Namespace))
 		}
 	}
@@ -573,9 +575,9 @@ func (n *Node) startWS(endpoint string, apis []rpc.API, modules []string, wsOrig
 	handler := rpc.NewServer()
 	for _, api := range apis {
 		if exposeAll || whitelist[api.Namespace] || (len(whitelist) == 0 && api.Public) {
-			//if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
-			//	return err
-			//}
+			if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
+				return err
+			}
 			n.log.Debug(fmt.Sprintf("WebSocket registered %T under '%s'", api.Service, api.Namespace))
 		}
 	}
@@ -715,3 +717,19 @@ const (
 	DefaultWSHost   = "localhost" // Default host interface for the websocket RPC server
 	DefaultWSPort   = 8546        // Default TCP port for the websocket RPC server
 )
+
+// Server retrieves the currently running P2P network layer. This method is meant
+// only to inspect fields of the currently running server, life cycle management
+// should be left to this Node entity.
+func (n *Node) Server() *p2p.Server {
+	n.lock.RLock()
+	defer n.lock.RUnlock()
+
+	return n.server
+}
+
+// DataDir retrieves the current datadir used by the protocol stack.
+// Deprecated: No files should be stored in this directory, use InstanceDir instead.
+func (n *Node) DataDir() string {
+	return n.config.DataDir
+}
