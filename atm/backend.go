@@ -30,7 +30,7 @@ type ATM struct {
 	chainConfig *params.ChainConfig
 
 	// Channel for shutting down the service
-	shutdownChan  chan bool    // Channel for shutting down the ethereum
+	shutdownChan  chan bool    // Channel for shutting down the ATMChain
 	stopDbUpgrade func() error // stop chain db sequential key upgrade
 
 	// Handlers
@@ -163,7 +163,7 @@ func CreateDB(ctx *node.ServiceContext, config *Config, name string) (db.Databas
 	return atmdb, nil
 }
 
-// CreateConsensusEngine creates the required type of consensus engine instance for an Ethereum service
+// CreateConsensusEngine creates the required type of consensus engine instance for an ATMChain service
 func CreateConsensusEngine(ctx *node.ServiceContext, chainConfig *params.ChainConfig, db db.Database) consensus.Engine {
 	// If proof-of-authority is requested, set it up
 	if chainConfig.Clique != nil {

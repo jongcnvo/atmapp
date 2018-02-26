@@ -2409,7 +2409,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     };
     
     /**
-     * Returns true if given string is a valid Ethereum block header bloom.
+     * Returns true if given string is a valid ATMChain block header bloom.
      *
      * @method isBloom
      * @param {String} hex encoded bloom filter
@@ -2609,8 +2609,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 inputFormatter: utils.toDecimal
             }),
             new Property({
-                name: 'version.ethereum',
-                getter: 'eth_protocolVersion',
+                name: 'version.',
+                getter: 'atm_protocolVersion',
                 inputFormatter: utils.toDecimal
             }),
             new Property({
@@ -4496,7 +4496,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     };
     
     /**
-     * This method should be used to create iban object from ethereum address
+     * This method should be used to create iban object from atmchain address
      *
      * @method fromAddress
      * @param {String} address
@@ -6317,7 +6317,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
     /**
      * It's responsible for passing messages to providers
-     * It's also responsible for polling the ethereum node for incoming messages
+     * It's also responsible for polling the atmchain node for incoming messages
      * Default poll timeout is 1 second
      * Singleton
      */

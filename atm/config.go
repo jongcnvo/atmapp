@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	// The genesis block, which is inserted if the database is empty.
-	// If nil, the Ethereum main net block is used.
+	// If nil, the main net block is used.
 	Genesis *core.Genesis `toml:",omitempty"`
 
 	// Protocol options
@@ -45,7 +45,7 @@ type GasConfig struct {
 	Default    *big.Int `toml:",omitempty"`
 }
 
-// DefaultConfig contains default settings for use on the Ethereum main net.
+// DefaultConfig contains default settings for use on the main net.
 var DefaultConfig = Config{
 	NetworkId:     1,
 	DatabaseCache: 128,

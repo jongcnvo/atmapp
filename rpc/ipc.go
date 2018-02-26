@@ -2,8 +2,6 @@ package rpc
 
 import (
 	"context"
-	"encoding/json"
-	"io"
 	"net"
 	"os"
 	"path/filepath"
@@ -39,11 +37,4 @@ func DialInProc(handler *Server) *Client {
 		return p2, nil
 	})
 	return c
-}
-
-// NewJSONCodec creates a new RPC server codec with support for JSON-RPC 2.0
-func NewJSONCodec(rwc io.ReadWriteCloser) ServerCodec {
-	d := json.NewDecoder(rwc)
-	d.UseNumber()
-	return &jsonCodec{closed: make(chan interface{}), d: d, e: json.NewEncoder(rwc), rw: rwc}
 }

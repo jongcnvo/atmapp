@@ -43,7 +43,7 @@ func NewApp(gitCommit, usage string) *cli.App {
 	return app
 }
 
-// RegisterATMService adds an Ethereum client to the stack.
+// RegisterATMService adds an ATMChain client to the stack.
 func RegisterATMService(stack *node.Node, cfg *atm.Config) {
 	var err error
 	err = stack.Register(func(ctx *node.ServiceContext) (node.Service, error) {
@@ -205,7 +205,7 @@ func homeDir() string {
 }
 
 // Custom cli.Flag type which expand the received string to an absolute path.
-// e.g. ~/.ethereum -> /home/username/.ethereum
+// e.g. ~/.atmchain -> /home/username/.atmchain
 type DirectoryFlag struct {
 	Name  string
 	Value DirectoryString

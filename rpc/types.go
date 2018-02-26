@@ -12,13 +12,6 @@ const (
 	LatestBlockNumber  = BlockNumber(-1)
 )
 
-// issued when a request is received after the server is issued to stop.
-type shutdownError struct{}
-
-func (e *shutdownError) ErrorCode() int { return -32000 }
-
-func (e *shutdownError) Error() string { return "server is shutting down" }
-
 // CodecOption specifies which type of messages this codec supports
 type CodecOption int
 

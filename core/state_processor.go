@@ -2,10 +2,10 @@ package core
 
 import (
 	"github.com/atmchain/atmapp/consensus"
-	"github.com/atmchain/atmapp/params"
 	"github.com/atmchain/atmapp/core/state"
 	"github.com/atmchain/atmapp/core/types"
 	"github.com/atmchain/atmapp/core/vm"
+	"github.com/atmchain/atmapp/params"
 
 	"github.com/atmchain/atmapp/common"
 )
@@ -29,7 +29,7 @@ func NewStateProcessor(config *params.ChainConfig, bc *BlockChain, engine consen
 	}
 }
 
-// Process processes the state changes according to the Ethereum rules by running
+// Process processes the state changes according to the ATMChain rules by running
 // the transaction messages using the statedb and applying any rewards to both
 // the processor (coinbase) and any included uncles.
 //

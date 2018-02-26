@@ -14,6 +14,14 @@ import (
 	"github.com/atmchain/atmapp/log"
 )
 
+const (
+	jsonrpcVersion           = "2.0"
+	serviceMethodSeparator   = "_"
+	subscribeMethodSuffix    = "_subscribe"
+	unsubscribeMethodSuffix  = "_unsubscribe"
+	notificationMethodSuffix = "_subscription"
+)
+
 // jsonCodec reads and writes JSON-RPC messages to the underlying connection. It
 // also has support for parsing arguments and serializing (result) objects.
 type jsonCodec struct {
@@ -71,6 +79,25 @@ type jsonNotification struct {
 type jsonSubscription struct {
 	Subscription string      `json:"subscription"`
 	Result       interface{} `json:"result,omitempty"`
+}
+
+// NewJSONCodec creates a new RPC server codec with support for JSON-RPC 2.0
+func NewJSONCodec(rwc io.ReadWriteCloser) ServerCodec {
+	d := json.NewDecoder(rwc)
+	d.UseNumber()
+	return &jsonCodec{closed: make(chan interface{}), d: d, e: json.NewEncoder(rwc), rw: rwc}
+}
+
+// isBatch returns true when the first non-whitespace characters is '['
+func isBatch(msg json.RawMessage) bool {
+	for _, c := range msg {
+		// skip insignificant whitespace (http://www.ietf.org/rfc/rfc4627.txt)
+		if c == 0x20 || c == 0x09 || c == 0x0a || c == 0x0d {
+			continue
+		}
+		return c == '['
+	}
+	return false
 }
 
 // ReadRequestHeaders will read new requests without parsing the arguments. It will

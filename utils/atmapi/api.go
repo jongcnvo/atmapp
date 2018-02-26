@@ -4,29 +4,29 @@ import (
 	"github.com/atmchain/atmapp/accounts"
 )
 
-// PublicEthereumAPI provides an API to access Ethereum related information.
+// PublicATMAPI provides an API to access ATMChain related information.
 // It offers only methods that operate on public data that is freely available to anyone.
 type PublicATMAPI struct {
 	b Backend
 }
 
-// NewPublicEthereumAPI creates a new ATMChain protocol API.
+// NewPublicATMAPI creates a new ATMChain protocol API.
 func NewPublicATMAPI(b Backend) *PublicATMAPI {
 	return &PublicATMAPI{b}
 }
 
-// ProtocolVersion returns the current Ethereum protocol version this node supports
+// ProtocolVersion returns the current ATMChain protocol version this node supports
 func (s *PublicATMAPI) ProtocolVersion() uint {
 	return 0 //hexutil.Uint(s.b.ProtocolVersion())
 }
 
-// PublicBlockChainAPI provides an API to access the Ethereum blockchain.
+// PublicBlockChainAPI provides an API to access the ATMChain blockchain.
 // It offers only methods that operate on public data that is freely available to anyone.
 type PublicBlockChainAPI struct {
 	b Backend
 }
 
-// NewPublicBlockChainAPI creates a new Ethereum blockchain API.
+// NewPublicBlockChainAPI creates a new ATMChain blockchain API.
 func NewPublicBlockChainAPI(b Backend) *PublicBlockChainAPI {
 	return &PublicBlockChainAPI{b}
 }
@@ -52,26 +52,26 @@ func NewPublicTxPoolAPI(b Backend) *PublicTxPoolAPI {
 	return &PublicTxPoolAPI{b}
 }
 
-// PublicDebugAPI is the collection of Ethereum APIs exposed over the public
+// PublicDebugAPI is the collection of ATMChain APIs exposed over the public
 // debugging endpoint.
 type PublicDebugAPI struct {
 	b Backend
 }
 
 // NewPublicDebugAPI creates a new API definition for the public debug methods
-// of the Ethereum service.
+// of the ATMChain service.
 func NewPublicDebugAPI(b Backend) *PublicDebugAPI {
 	return &PublicDebugAPI{b: b}
 }
 
-// PrivateDebugAPI is the collection of Ethereum APIs exposed over the private
+// PrivateDebugAPI is the collection of ATMChain APIs exposed over the private
 // debugging endpoint.
 type PrivateDebugAPI struct {
 	b Backend
 }
 
 // NewPrivateDebugAPI creates a new API definition for the private debug methods
-// of the Ethereum service.
+// of the ATMChain service.
 func NewPrivateDebugAPI(b Backend) *PrivateDebugAPI {
 	return &PrivateDebugAPI{b: b}
 }

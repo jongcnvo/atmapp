@@ -43,3 +43,10 @@ type invalidMessageError struct{ message string }
 func (e *invalidMessageError) ErrorCode() int { return -32700 }
 
 func (e *invalidMessageError) Error() string { return e.message }
+
+// issued when a request is received after the server is issued to stop.
+type shutdownError struct{}
+
+func (e *shutdownError) ErrorCode() int { return -32000 }
+
+func (e *shutdownError) Error() string { return "server is shutting down" }
