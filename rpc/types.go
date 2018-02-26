@@ -13,6 +13,8 @@ import (
 	"github.com/atmchain/atmapp/log"
 )
 
+const MetadataApi = "rpc"
+
 type BlockNumber int64
 
 const (
@@ -88,8 +90,8 @@ func NewServer() *Server {
 
 	// register a default service which will provide meta information about the RPC service such as the services and
 	// methods it offers.
-	//rpcService := &RPCService{server}
-	//server.RegisterName(MetadataApi, rpcService)
+	rpcService := &RPCService{server}
+	server.RegisterName(MetadataApi, rpcService)
 
 	return server
 }

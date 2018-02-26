@@ -55,7 +55,7 @@ type ATM struct {
 	atmbase  common.Address
 
 	networkId uint64
-	//netRPCService *ethapi.PublicNetAPI
+	//netRPCService *atmapi.PublicNetAPI
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
 }
@@ -182,32 +182,33 @@ func (s *ATM) APIs() []rpc.API {
 
 	// Append all the local APIs and return
 	return append(apis, []rpc.API{
-		/*{
-			Namespace: "atm",
-			Version:   "1.0",
-			Service:   NewPublicATMAPI(s),
-			Public:    true,
-		}, {
-			Namespace: "atm",
-			Version:   "1.0",
-			Service:   NewPublicMinerAPI(s),
-			Public:    true,
-		}, {
-			Namespace: "atm",
-			Version:   "1.0",
-			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
-			Public:    true,
-		}, {
-			Namespace: "atm",
-			Version:   "1.0",
-			Service:   NewPrivateMinerAPI(s),
-			Public:    false,
-		}, {
-			Namespace: "atm",
-			Version:   "1.0",
-			Service:   filters.NewPublicFilterAPI(s.ApiBackend, false),
-			Public:    true,
-		}, */
+		/*
+			{
+				Namespace: "atm",
+				Version:   "1.0",
+				Service:   NewPublicATMAPI(s),
+				Public:    true,
+			}, {
+				Namespace: "atm",
+				Version:   "1.0",
+				Service:   NewPublicMinerAPI(s),
+				Public:    true,
+			}, {
+				Namespace: "atm",
+				Version:   "1.0",
+				Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
+				Public:    true,
+			}, {
+				Namespace: "atm",
+				Version:   "1.0",
+				Service:   NewPrivateMinerAPI(s),
+				Public:    false,
+			}, {
+				Namespace: "atm",
+				Version:   "1.0",
+				Service:   filters.NewPublicFilterAPI(s.ApiBackend, false),
+				Public:    true,
+			}, */
 		{
 			Namespace: "admin",
 			Version:   "1.0",
@@ -237,6 +238,29 @@ func (s *ATM) BlockChain() *core.BlockChain { return s.blockchain }
 // network protocols to start.
 func (s *ATM) Protocols() []p2p.Protocol {
 	return s.protocolManager.SubProtocols
+}
+
+func (s *ATM) ATMbase() (eb common.Address, err error) {
+	s.lock.RLock()
+	atmbase := s.atmbase
+	s.lock.RUnlock()
+
+	if atmbase != (common.Address{}) {
+		return atmbase, nil
+	}
+	if wallets := s.AccountManager().Wallets(); len(wallets) > 0 {
+		if accounts := wallets[0].Accounts(); len(accounts) > 0 {
+			etherbase := accounts[0].Address
+
+			s.lock.Lock()
+			s.atmbase = atmbase
+			s.lock.Unlock()
+
+			log.Info("ATMChain automatically configured", "address", etherbase)
+			return etherbase, nil
+		}
+	}
+	return common.Address{}, fmt.Errorf("atmbase must be explicitly specified")
 }
 
 // Start implements node.Service, starting all internal goroutines needed by the

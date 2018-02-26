@@ -15,6 +15,11 @@ func NewPublicATMAPI(b Backend) *PublicATMAPI {
 	return &PublicATMAPI{b}
 }
 
+// ProtocolVersion returns the current Ethereum protocol version this node supports
+func (s *PublicATMAPI) ProtocolVersion() uint {
+	return 0 //hexutil.Uint(s.b.ProtocolVersion())
+}
+
 // PublicBlockChainAPI provides an API to access the Ethereum blockchain.
 // It offers only methods that operate on public data that is freely available to anyone.
 type PublicBlockChainAPI struct {

@@ -132,3 +132,13 @@ func drop(slice []Wallet, wallets ...Wallet) []Wallet {
 	}
 	return slice
 }
+
+// Wallets returns all signer accounts registered under this account manager.
+func (am *Manager) Wallets() []Wallet {
+	am.lock.RLock()
+	defer am.lock.RUnlock()
+
+	cpy := make([]Wallet, len(am.wallets))
+	copy(cpy, am.wallets)
+	return cpy
+}
