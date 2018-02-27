@@ -21,7 +21,7 @@ See https://github.com/atmchain/atmapp/wiki/Javascipt-Console.`,
 	}
 )
 
-// localConsole starts a new geth node, attaching a JavaScript console to it at the
+// localConsole starts a new node, attaching a JavaScript console to it at the
 // same time.
 func localConsole(ctx *cli.Context) error {
 	// Create and start the node based on the CLI flags

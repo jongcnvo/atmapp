@@ -251,14 +251,14 @@ func (s *ATM) ATMbase() (eb common.Address, err error) {
 	}
 	if wallets := s.AccountManager().Wallets(); len(wallets) > 0 {
 		if accounts := wallets[0].Accounts(); len(accounts) > 0 {
-			etherbase := accounts[0].Address
+			atmbase := accounts[0].Address
 
 			s.lock.Lock()
 			s.atmbase = atmbase
 			s.lock.Unlock()
 
-			log.Info("ATMChain automatically configured", "address", etherbase)
-			return etherbase, nil
+			log.Info("ATMChain automatically configured", "address", atmbase)
+			return atmbase, nil
 		}
 	}
 	return common.Address{}, fmt.Errorf("atmbase must be explicitly specified")
