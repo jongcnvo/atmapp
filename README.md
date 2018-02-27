@@ -40,6 +40,9 @@ SUB COMMANDS:
   console  Start an interactive Javascript environment
 
 GLOBAL OPTIONS:
+
   --unlock value                    Comma separated list of accounts to unlock
+
   --mine                            Enable mining
+  
   --port value                      Network listening port (default: 30303)
