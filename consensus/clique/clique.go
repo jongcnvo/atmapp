@@ -331,7 +331,7 @@ func (c *Clique) Seal(chain consensus.ChainReader, block *types.Block, stop <-ch
 	}
 	// Don't hold the signer fields for the entire sealing procedure
 	c.lock.RLock()
-	signer, _ := c.signer, c.signFn
+	signer, signFn := c.signer, c.signFn
 	c.lock.RUnlock()
 
 	// Bail out if we're unauthorized to sign a block
@@ -339,6 +339,7 @@ func (c *Clique) Seal(chain consensus.ChainReader, block *types.Block, stop <-ch
 	if err != nil {
 		return nil, err
 	}
+
 	if _, authorized := snap.Signers[signer]; !authorized {
 		return nil, errUnauthorized
 	}
@@ -372,11 +373,11 @@ func (c *Clique) Seal(chain consensus.ChainReader, block *types.Block, stop <-ch
 	case <-time.After(delay):
 	}
 	// Sign all the things!
-	//sighash, err := signFn(accounts.Account{Address: signer}, sigHash(header).Bytes())
-	//if err != nil {
-	//	return nil, err
-	//}
-	//copy(header.Extra[len(header.Extra)-extraSeal:], sighash)
+	sighash, err := signFn(accounts.Account{Address: signer}, sigHash(header).Bytes())
+	if err != nil {
+		return nil, err
+	}
+	copy(header.Extra[len(header.Extra)-extraSeal:], sighash)
 
 	return block.WithSeal(header), nil
 }

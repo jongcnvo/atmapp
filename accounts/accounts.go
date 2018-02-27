@@ -11,19 +11,6 @@ import (
 	"github.com/atmchain/atmapp/event"
 )
 
-const (
-	// WalletArrived is fired when a new wallet is detected either via USB or via
-	// a filesystem event in the keystore.
-	WalletArrived WalletEventType = iota
-
-	// WalletOpened is fired when a wallet is successfully opened with the purpose
-	// of starting any background processes such as automatic key derivation.
-	WalletOpened
-
-	// WalletDropped
-	WalletDropped
-)
-
 // ErrNotSupported is returned when an operation is requested from an account
 // backend that it does not support.
 var ErrNotSupported = errors.New("not supported")
@@ -179,6 +166,19 @@ type Backend interface {
 // WalletEventType represents the different event types that can be fired by
 // the wallet subscription subsystem.
 type WalletEventType int
+
+const (
+	// WalletArrived is fired when a new wallet is detected either via USB or via
+	// a filesystem event in the keystore.
+	WalletArrived WalletEventType = iota
+
+	// WalletOpened is fired when a wallet is successfully opened with the purpose
+	// of starting any background processes such as automatic key derivation.
+	WalletOpened
+
+	// WalletDropped
+	WalletDropped
+)
 
 // WalletEvent is an event fired by an account backend when a wallet arrival or
 // departure is detected.
