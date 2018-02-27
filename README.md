@@ -41,8 +41,8 @@ SUB COMMANDS:
 
 GLOBAL OPTIONS:
 
-  --unlock value                    Comma separated list of accounts to unlock
+  --unlock value                Comma separated list of accounts to unlock
 
-  --mine                            Enable mining
+  --mine                        Enable mining
   
-  --port value                      Network listening port (default: 30303)
+  --port value                  Network listening port (default: 30303)
