@@ -24,6 +24,7 @@ import (
 	"github.com/atmchain/atmapp/core/state"
 	"github.com/atmchain/atmapp/log"
 	"github.com/atmchain/atmapp/node"
+	"github.com/atmchain/atmapp/p2p"
 	"github.com/atmchain/atmapp/params"
 	"gopkg.in/urfave/cli.v1"
 )
@@ -51,7 +52,7 @@ func RegisterATMService(stack *node.Node, cfg *atm.Config) {
 		return nil, nil
 	})
 	if err != nil {
-		//Fatalf("Failed to register the ATM service: %v", err)
+		Fatalf("Failed to register the ATM service: %v", err)
 	}
 }
 
@@ -116,7 +117,12 @@ func makeDatabaseHandles() int {
 
 // SetNodeConfig applies node-related command line flags to the config.
 func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
+	SetP2PConfig(ctx, &cfg.P2P)
 	setHTTP(ctx, cfg)
+
+	if ctx.GlobalIsSet(DataDirFlag.Name) {
+		cfg.DataDir = ctx.GlobalString(DataDirFlag.Name)
+	}
 }
 
 // setHTTP creates the HTTP RPC listener interface string from the set
@@ -130,6 +136,14 @@ func setHTTP(ctx *cli.Context, cfg *node.Config) {
 	}
 }
 
+// setListenAddress creates a TCP listening address string from set command
+// line flags.
+func setListenAddress(ctx *cli.Context, cfg *p2p.Config) {
+	if ctx.GlobalIsSet(ListenPortFlag.Name) {
+		cfg.ListenAddr = fmt.Sprintf(":%d", ctx.GlobalInt(ListenPortFlag.Name))
+	}
+}
+
 func SetATMConfig(ctx *cli.Context, stack *node.Node, cfg *atm.Config) {
 	cfg.DatabaseHandles = makeDatabaseHandles()
 }
@@ -137,6 +151,10 @@ func SetATMConfig(ctx *cli.Context, stack *node.Node, cfg *atm.Config) {
 // MakePasswordList reads password lines from the file specified by the global --password flag.
 func MakePasswordList(ctx *cli.Context) []string {
 	return nil
+}
+
+func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
+	setListenAddress(ctx, cfg)
 }
 
 // MakeAddress converts an account specified directly as a hex encoded string or

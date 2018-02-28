@@ -236,8 +236,9 @@ func doInstall(cmdline []string) {
 	packages = ExpandPackagesNoVendor(packages)
 
 	if *arch == "" || *arch == runtime.GOARCH {
-		goinstall := goTool("install", buildFlags(env)...)
+		goinstall := goTool("build", buildFlags(env)...)
 		goinstall.Args = append(goinstall.Args, "-v")
+		goinstall.Args = append(goinstall.Args, []string{"-o", executablePath("atmapp")}...)
 		goinstall.Args = append(goinstall.Args, packages...)
 		MustRun(goinstall)
 		return

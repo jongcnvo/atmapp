@@ -176,7 +176,7 @@ func makeFullNode(ctx *cli.Context) *node.Node {
 
 func startNode(ctx *cli.Context, stack *node.Node) {
 	if err := stack.Start(); err != nil {
-		log.Info("Error starting protocol stack: %v", err)
+		utils.Fatalf("Error starting protocol stack: %v", err)
 	}
 
 	go func() {

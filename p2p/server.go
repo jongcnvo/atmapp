@@ -760,6 +760,16 @@ func (srv *Server) runPeer(p *Peer) {
 	srv.delpeer <- peerDrop{p, err, remoteRequested}
 }
 
+// AddPeer connects to the given node and maintains the connection until the
+// server is shut down. If the connection fails for any reason, the server will
+// attempt to reconnect the peer.
+func (srv *Server) AddPeer(node *discover.Node) {
+	select {
+	case srv.addstatic <- node:
+	case <-srv.quit:
+	}
+}
+
 // checkpoint sends the conn to run, which performs the
 // post-handshake checks for the stage (posthandshake, addpeer).
 func (srv *Server) checkpoint(c *conn, stage chan<- *conn) error {

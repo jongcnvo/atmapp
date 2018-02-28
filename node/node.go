@@ -392,11 +392,11 @@ func (n *Node) startRPC(services map[reflect.Type]Service) error {
 // apis returns the collection of RPC descriptors this node offers.
 func (n *Node) apis() []rpc.API {
 	return []rpc.API{
-		/*{
+		{
 			Namespace: "admin",
 			Version:   "1.0",
 			Service:   NewPrivateAdminAPI(n),
-		}, */
+		},
 		{
 			Namespace: "admin",
 			Version:   "1.0",
