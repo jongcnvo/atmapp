@@ -3466,7 +3466,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
     
         switch(type) {
-            case 'eth':
+            case 'atm':
     
                 // make sure topics, get converted to hex
                 options.topics = options.topics || [];
@@ -4199,7 +4199,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         var format = this.unpackOutput.bind(this);
     
         return {
-            method: this._constant ? 'eth_call' : 'eth_sendTransaction',
+            method: this._constant ? 'atm_call' : 'atm_sendTransaction',
             callback: callback,
             params: [payload],
             format: format
@@ -5222,7 +5222,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'atm_getUncleCountByBlockHash' : 'atm_getUncleCountByBlockNumber';
     };
     
-    function Eth(web3) {
+    function ATM(web3) {
         this._requestManager = web3._requestManager;
     
         var self = this;
@@ -6620,7 +6620,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         };
     
         self.requestManager.startPolling({
-            method: 'eth_syncing',
+            method: 'atm_syncing',
             params: [],
         }, self.pollId, onMessage, self.stopWatching.bind(self));
     

@@ -7,6 +7,10 @@ import (
 
 type BlockNumber int64
 
+func (bn BlockNumber) Int64() int64 {
+	return (int64)(bn)
+}
+
 const (
 	PendingBlockNumber = BlockNumber(-2)
 	LatestBlockNumber  = BlockNumber(-1)

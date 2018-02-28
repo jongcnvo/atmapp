@@ -2,15 +2,16 @@ package types
 
 import (
 	"bytes"
-	"github.com/atmchain/atmapp/core/trie"
-	"github.com/atmchain/atmapp/crypto"
-	"github.com/atmchain/atmapp/rlp"
+	"io"
 	"math/big"
 	"sort"
 	"sync/atomic"
 	"time"
 
 	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/core/trie"
+	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/rlp"
 )
 
 var (
@@ -253,4 +254,20 @@ func (b *Block) WithSeal(header *Header) *Block {
 		transactions: b.transactions,
 		uncles:       b.uncles,
 	}
+}
+
+// "external" block encoding. used for eth protocol, etc.
+type extblock struct {
+	Header *Header
+	Txs    []*Transaction
+	Uncles []*Header
+}
+
+// EncodeRLP serializes b into the Ethereum RLP block format.
+func (b *Block) EncodeRLP(w io.Writer) error {
+	return rlp.Encode(w, extblock{
+		Header: b.header,
+		Txs:    b.transactions,
+		Uncles: b.uncles,
+	})
 }

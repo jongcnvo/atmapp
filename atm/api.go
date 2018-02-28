@@ -1,6 +1,11 @@
 package atm
 
 import (
+	"compress/gzip"
+	"io"
+	"os"
+	"strings"
+
 	"github.com/atmchain/atmapp/common"
 )
 
@@ -30,4 +35,26 @@ type PrivateAdminAPI struct {
 // admin methods of the ATMChain service.
 func NewPrivateAdminAPI(atm *ATM) *PrivateAdminAPI {
 	return &PrivateAdminAPI{atm: atm}
+}
+
+// ExportChain exports the current blockchain into a local file.
+func (api *PrivateAdminAPI) ExportChain(file string) (bool, error) {
+	// Make sure we can create the file to export into
+	out, err := os.OpenFile(file, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.ModePerm)
+	if err != nil {
+		return false, err
+	}
+	defer out.Close()
+
+	var writer io.Writer = out
+	if strings.HasSuffix(file, ".gz") {
+		writer = gzip.NewWriter(writer)
+		defer writer.(*gzip.Writer).Close()
+	}
+
+	// Export the blockchain
+	if err := api.atm.BlockChain().Export(writer); err != nil {
+		return false, err
+	}
+	return true, nil
 }

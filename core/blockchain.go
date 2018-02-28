@@ -3,6 +3,14 @@ package core
 import (
 	"errors"
 	"fmt"
+	"io"
+	"math/big"
+	mrand "math/rand"
+	"sync"
+	"sync/atomic"
+	"time"
+
+	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/consensus"
 	"github.com/atmchain/atmapp/core/state"
 	"github.com/atmchain/atmapp/core/trie"
@@ -14,13 +22,6 @@ import (
 	"github.com/atmchain/atmapp/log"
 	"github.com/atmchain/atmapp/params"
 	"github.com/atmchain/atmapp/rlp"
-	"math/big"
-	mrand "math/rand"
-	"sync"
-	"sync/atomic"
-	"time"
-
-	"github.com/atmchain/atmapp/common"
 	"github.com/hashicorp/golang-lru"
 )
 
@@ -333,6 +334,35 @@ func (bc *BlockChain) Validator() Validator {
 // Reset purges the entire blockchain, restoring it to its genesis state.
 func (bc *BlockChain) Reset() error {
 	return bc.ResetWithGenesisBlock(bc.genesisBlock)
+}
+
+// Export writes the active chain to the given writer.
+func (bc *BlockChain) Export(w io.Writer) error {
+	return bc.ExportN(w, uint64(0), bc.currentBlock.NumberU64())
+}
+
+// ExportN writes a subset of the active chain to the given writer.
+func (bc *BlockChain) ExportN(w io.Writer, first uint64, last uint64) error {
+	bc.mu.RLock()
+	defer bc.mu.RUnlock()
+
+	if first > last {
+		return fmt.Errorf("export failed: first (%d) is greater than last (%d)", first, last)
+	}
+	log.Info("Exporting batch of blocks", "count", last-first+1)
+
+	for nr := first; nr <= last; nr++ {
+		block := bc.GetBlockByNumber(nr)
+		if block == nil {
+			return fmt.Errorf("export failed on #%d: not found", nr)
+		}
+
+		if err := block.EncodeRLP(w); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // ResetWithGenesisBlock purges the entire blockchain, restoring it to the
