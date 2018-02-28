@@ -55,8 +55,8 @@ type ATM struct {
 	gasPrice *big.Int
 	atmbase  common.Address
 
-	networkId uint64
-	//netRPCService *atmapi.PublicNetAPI
+	networkId     uint64
+	netRPCService *atmapi.PublicNetAPI
 
 	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
 }
@@ -223,12 +223,12 @@ func (s *ATM) APIs() []rpc.API {
 			Namespace: "debug",
 			Version:   "1.0",
 			Service:   NewPrivateDebugAPI(s.chainConfig, s),
-		}, {
+		}, */{
 			Namespace: "net",
 			Version:   "1.0",
 			Service:   s.netRPCService,
 			Public:    true,
-		},*/
+		},
 	}...)
 }
 
@@ -295,7 +295,7 @@ func (s *ATM) Start(srvr *p2p.Server) error {
 	//s.startBloomHandlers()
 
 	// Start the RPC service
-	//s.netRPCService = ethapi.NewPublicNetAPI(srvr, s.NetVersion())
+	s.netRPCService = atmapi.NewPublicNetAPI(srvr, s.NetVersion())
 
 	// Figure out a max peers count based on the server limits
 	/*maxPeers := srvr.MaxPeers
@@ -337,3 +337,4 @@ func (s *ATM) EventMux() *event.TypeMux          { return s.eventMux }
 func (s *ATM) ChainDb() db.Database              { return s.chainDb }
 func (s *ATM) TxPool() *core.TxPool              { return s.txPool }
 func (s *ATM) AccountManager() *accounts.Manager { return s.accountManager }
+func (s *ATM) NetVersion() uint64                { return s.networkId }
