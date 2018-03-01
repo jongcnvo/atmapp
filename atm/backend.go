@@ -58,7 +58,7 @@ type ATM struct {
 	networkId     uint64
 	netRPCService *atmapi.PublicNetAPI
 
-	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and etherbase)
+	lock sync.RWMutex // Protects the variadic fields (e.g. gas price and atmbase)
 }
 
 // New creates a new ATM object (including the

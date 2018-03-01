@@ -1,6 +1,10 @@
 # ATMChain
 Blockchain protocol for smart media
 
+## Support OS
+
+Mac/Linux
+
 ## Installation
 
 1. Clone ATMChain source code from github 
@@ -43,6 +47,8 @@ GLOBAL OPTIONS:
 
   --datadir value               Data directory for the databases and keystore
   
+  --identity value              Custom node name
+
   --unlock value                Comma separated list of accounts to unlock
 
   --mine                        Enable mining

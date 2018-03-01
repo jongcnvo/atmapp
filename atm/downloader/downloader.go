@@ -40,7 +40,7 @@ var (
 	rttMinConfidence  = 0.1                      // Worse confidence factor in our estimated RTT value
 	MaxSkeletonSize   = 128                      // Number of header fetches to need for a skeleton assembly
 	maxHeadersProcess = 2048                     // Number of header download results to import at once into the chain
-	maxQueuedHeaders  = 32 * 1024                // [eth/62] Maximum number of headers to queue for import (DOS protection)
+	maxQueuedHeaders  = 32 * 1024                // Maximum number of headers to queue for import (DOS protection)
 	maxResultsProcess = 2048                     // Number of content download results to import at once into the chain
 )
 
@@ -100,12 +100,12 @@ type Downloader struct {
 	notified        int32
 
 	// Channels
-	headerCh      chan dataPack        // [eth/62] Channel receiving inbound block headers
-	bodyCh        chan dataPack        // [eth/62] Channel receiving inbound block bodies
-	receiptCh     chan dataPack        // [eth/63] Channel receiving inbound receipts
-	bodyWakeCh    chan bool            // [eth/62] Channel to signal the block body fetcher of new tasks
-	receiptWakeCh chan bool            // [eth/63] Channel to signal the receipt fetcher of new tasks
-	headerProcCh  chan []*types.Header // [eth/62] Channel to feed the header processor new tasks
+	headerCh      chan dataPack        // Channel receiving inbound block headers
+	bodyCh        chan dataPack        // Channel receiving inbound block bodies
+	receiptCh     chan dataPack        // Channel receiving inbound receipts
+	bodyWakeCh    chan bool            // Channel to signal the block body fetcher of new tasks
+	receiptWakeCh chan bool            // Channel to signal the receipt fetcher of new tasks
+	headerProcCh  chan []*types.Header // Channel to feed the header processor new tasks
 
 	// for stateFetcher
 	stateSyncStart chan *stateSync
@@ -466,7 +466,7 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.I
 			d.mux.Post(DoneEvent{})
 		}
 	}()
-	if p.version < 62 {
+	if p.version < 1 {
 		return errTooOld
 	}
 

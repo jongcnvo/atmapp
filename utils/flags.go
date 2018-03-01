@@ -119,6 +119,7 @@ func makeDatabaseHandles() int {
 func SetNodeConfig(ctx *cli.Context, cfg *node.Config) {
 	SetP2PConfig(ctx, &cfg.P2P)
 	setHTTP(ctx, cfg)
+	setNodeUserIdent(ctx, cfg)
 
 	if ctx.GlobalIsSet(DataDirFlag.Name) {
 		cfg.DataDir = ctx.GlobalString(DataDirFlag.Name)
@@ -146,6 +147,13 @@ func setListenAddress(ctx *cli.Context, cfg *p2p.Config) {
 
 func SetATMConfig(ctx *cli.Context, stack *node.Node, cfg *atm.Config) {
 	cfg.DatabaseHandles = makeDatabaseHandles()
+}
+
+// setNodeUserIdent creates the user identifier from CLI flags.
+func setNodeUserIdent(ctx *cli.Context, cfg *node.Config) {
+	if identity := ctx.GlobalString(IdentityFlag.Name); len(identity) > 0 {
+		cfg.UserIdent = identity
+	}
 }
 
 // MakePasswordList reads password lines from the file specified by the global --password flag.
@@ -347,22 +355,10 @@ var (
 		Name:  "keystore",
 		Usage: "Directory for the keystore (default = inside the datadir)",
 	}
-	NoUSBFlag = cli.BoolFlag{
-		Name:  "nousb",
-		Usage: "Disables monitoring for and managing USB hardware wallets",
-	}
 	NetworkIdFlag = cli.Uint64Flag{
 		Name:  "networkid",
-		Usage: "Network identifier (integer, 1=Frontier, 2=Morden (disused), 3=Ropsten, 4=Rinkeby)",
+		Usage: "Network identifier (integer, 1=Main net)",
 		Value: atm.DefaultConfig.NetworkId,
-	}
-	DeveloperFlag = cli.BoolFlag{
-		Name:  "dev",
-		Usage: "Ephemeral proof-of-authority network with a pre-funded developer account, mining enabled",
-	}
-	DeveloperPeriodFlag = cli.IntFlag{
-		Name:  "dev.period",
-		Usage: "Block period to use in developer mode (0 = mine only if transaction pending)",
 	}
 	IdentityFlag = cli.StringFlag{
 		Name:  "identity",
@@ -444,8 +440,8 @@ var (
 		Usage: "Target gas limit sets the artificial target gas floor for the blocks to mine",
 		Value: params.GenesisGasLimit,
 	}
-	EtherbaseFlag = cli.StringFlag{
-		Name:  "etherbase",
+	ATMbaseFlag = cli.StringFlag{
+		Name:  "atmbase",
 		Usage: "Public address for block mining rewards (default = first account created)",
 		Value: "0",
 	}
@@ -473,15 +469,6 @@ var (
 	VMEnableDebugFlag = cli.BoolFlag{
 		Name:  "vmdebug",
 		Usage: "Record information useful for VM and contract debugging",
-	}
-	// Logging and debug settings
-	EthStatsURLFlag = cli.StringFlag{
-		Name:  "ethstats",
-		Usage: "Reporting URL of a ethstats service (nodename:secret@host:port)",
-	}
-	FakePoWFlag = cli.BoolFlag{
-		Name:  "fakepow",
-		Usage: "Disables proof-of-work verification",
 	}
 	NoCompactionFlag = cli.BoolFlag{
 		Name:  "nocompaction",
@@ -571,17 +558,7 @@ var (
 	}
 	BootnodesFlag = cli.StringFlag{
 		Name:  "bootnodes",
-		Usage: "Comma separated enode URLs for P2P discovery bootstrap (set v4+v5 instead for light servers)",
-		Value: "",
-	}
-	BootnodesV4Flag = cli.StringFlag{
-		Name:  "bootnodesv4",
-		Usage: "Comma separated enode URLs for P2P v4 discovery bootstrap (light server, full nodes)",
-		Value: "",
-	}
-	BootnodesV5Flag = cli.StringFlag{
-		Name:  "bootnodesv5",
-		Usage: "Comma separated enode URLs for P2P v5 discovery bootstrap (light server, light nodes)",
+		Usage: "Comma separated enode URLs for P2P discovery bootstrap",
 		Value: "",
 	}
 	NodeKeyFileFlag = cli.StringFlag{
