@@ -41,6 +41,8 @@ SUB COMMANDS:
 
 GLOBAL OPTIONS:
 
+  --datadir value               Data directory for the databases and keystore
+  
   --unlock value                Comma separated list of accounts to unlock
 
   --mine                        Enable mining

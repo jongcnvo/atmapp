@@ -168,6 +168,54 @@ func (pm *ProtocolManager) removePeer(id string) {
 	}
 }
 
+// syncer is responsible for periodically synchronising with the network, both
+// downloading hashes and blocks as well as handling the announcement handler.
+func (pm *ProtocolManager) syncer() {
+	// Start and ensure cleanup of sync mechanisms
+	pm.fetcher.Start()
+	defer pm.fetcher.Stop()
+	defer pm.downloader.Terminate()
+
+	// Wait for different events to fire synchronisation operations
+	forceSync := time.NewTicker(forceSyncCycle)
+	defer forceSync.Stop()
+
+	for {
+		select {
+		case <-pm.newPeerCh:
+			// Make sure we have peers to select from, then sync
+			if pm.peers.Len() < minDesiredPeerCount {
+				break
+			}
+			go pm.synchronise(pm.peers.BestPeer())
+
+		case <-forceSync.C:
+			// Force a sync even if not enough peers are present
+			go pm.synchronise(pm.peers.BestPeer())
+
+		case <-pm.noMorePeers:
+			return
+		}
+	}
+}
+
+func (pm *ProtocolManager) Start(maxPeers int) {
+	pm.maxPeers = maxPeers
+
+	// broadcast transactions
+	pm.txCh = make(chan core.TxPreEvent, txChanSize)
+	pm.txSub = pm.txpool.SubscribeTxPreEvent(pm.txCh)
+	go pm.txBroadcastLoop()
+
+	// broadcast mined blocks
+	pm.minedBlockSub = pm.eventMux.Subscribe(core.NewMinedBlockEvent{})
+	go pm.minedBroadcastLoop()
+
+	// start sync handlers
+	go pm.syncer()
+	go pm.txsyncLoop()
+}
+
 // handle is the callback invoked to manage the life cycle of an eth peer. When
 // this function terminates, the peer is disconnected.
 func (pm *ProtocolManager) handle(p *peer) error {
@@ -533,6 +581,43 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
 	}
 	return nil
+}
+
+// BroadcastTx will propagate a transaction to all peers which are not known to
+// already have the given transaction.
+func (pm *ProtocolManager) BroadcastTx(hash common.Hash, tx *types.Transaction) {
+	// Broadcast transaction to a batch of peers not knowing about it
+	peers := pm.peers.PeersWithoutTx(hash)
+	//FIXME include this again: peers = peers[:int(math.Sqrt(float64(len(peers))))]
+	for _, peer := range peers {
+		peer.SendTransactions(types.Transactions{tx})
+	}
+	log.Trace("Broadcast transaction", "hash", hash, "recipients", len(peers))
+}
+
+// Mined broadcast loop
+func (self *ProtocolManager) minedBroadcastLoop() {
+	// automatically stops if unsubscribe
+	for obj := range self.minedBlockSub.Chan() {
+		switch ev := obj.Data.(type) {
+		case core.NewMinedBlockEvent:
+			self.BroadcastBlock(ev.Block, true)  // First propagate block to peers
+			self.BroadcastBlock(ev.Block, false) // Only then announce to the rest
+		}
+	}
+}
+
+func (self *ProtocolManager) txBroadcastLoop() {
+	for {
+		select {
+		case event := <-self.txCh:
+			self.BroadcastTx(event.Tx.Hash(), event.Tx)
+
+		// Err() channel will be closed when unsubscribing.
+		case <-self.txSub.Err():
+			return
+		}
+	}
 }
 
 // NodeInfo represents a short summary of the ATMChain sub-protocol metadata

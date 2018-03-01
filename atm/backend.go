@@ -298,15 +298,9 @@ func (s *ATM) Start(srvr *p2p.Server) error {
 	s.netRPCService = atmapi.NewPublicNetAPI(srvr, s.NetVersion())
 
 	// Figure out a max peers count based on the server limits
-	/*maxPeers := srvr.MaxPeers
-	if s.config.LightServ > 0 {
-		maxPeers -= s.config.LightPeers
-		if maxPeers < srvr.MaxPeers/2 {
-			maxPeers = srvr.MaxPeers / 2
-		}
-	}*/
+	maxPeers := srvr.MaxPeers
 	// Start the networking layer and the light server if requested
-	//s.protocolManager.Start(maxPeers)
+	s.protocolManager.Start(maxPeers)
 	return nil
 }
 

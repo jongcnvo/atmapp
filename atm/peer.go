@@ -227,6 +227,15 @@ func (p *peer) MarkTransaction(hash common.Hash) {
 	p.knownTxs.Add(hash)
 }
 
+// SendTransactions sends transactions to the peer and includes the hashes
+// in its transaction hash set for future reference.
+func (p *peer) SendTransactions(txs types.Transactions) error {
+	for _, tx := range txs {
+		p.knownTxs.Add(tx.Hash())
+	}
+	return p2p.Send(p.rw, TxMsg, txs)
+}
+
 // SendNewBlockHashes announces the availability of a number of blocks through
 // a hash notification.
 func (p *peer) SendNewBlockHashes(hashes []common.Hash, numbers []uint64) error {
@@ -333,4 +342,36 @@ func (ps *peerSet) PeersWithoutBlock(hash common.Hash) []*peer {
 		}
 	}
 	return list
+}
+
+// PeersWithoutTx retrieves a list of peers that do not have a given transaction
+// in their set of known hashes.
+func (ps *peerSet) PeersWithoutTx(hash common.Hash) []*peer {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	list := make([]*peer, 0, len(ps.peers))
+	for _, p := range ps.peers {
+		if !p.knownTxs.Has(hash) {
+			list = append(list, p)
+		}
+	}
+	return list
+}
+
+// BestPeer retrieves the known peer with the currently highest total difficulty.
+func (ps *peerSet) BestPeer() *peer {
+	ps.lock.RLock()
+	defer ps.lock.RUnlock()
+
+	var (
+		bestPeer *peer
+		bestTd   *big.Int
+	)
+	for _, p := range ps.peers {
+		if _, td := p.Head(); bestPeer == nil || td.Cmp(bestTd) > 0 {
+			bestPeer, bestTd = p, td
+		}
+	}
+	return bestPeer
 }

@@ -513,6 +513,22 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.I
 	return err
 }
 
+// Terminate interrupts the downloader, canceling all pending operations.
+// The downloader cannot be reused after calling Terminate.
+func (d *Downloader) Terminate() {
+	// Close the termination channel (make sure double close is allowed)
+	d.quitLock.Lock()
+	select {
+	case <-d.quitCh:
+	default:
+		close(d.quitCh)
+	}
+	d.quitLock.Unlock()
+
+	// Cancel any pending download requests
+	d.Cancel()
+}
+
 // fetchHeight retrieves the head header of the remote peer to aid in estimating
 // the total time a pending synchronisation would take.
 func (d *Downloader) fetchHeight(p *peerConnection) (*types.Header, error) {
