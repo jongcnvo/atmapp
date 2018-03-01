@@ -37,7 +37,7 @@ func init() {
 func Setup(ctx *cli.Context) error {
 	// logging
 	//log.PrintOrigins(ctx.GlobalBool(debugFlag.Name))
-	glogger.Verbosity(log.Lvl(3))
+	glogger.Verbosity(log.Lvl(4))
 	//glogger.Vmodule(ctx.GlobalString(vmoduleFlag.Name))
 	//glogger.BacktraceAt(ctx.GlobalString(backtraceAtFlag.Name))
 	log.Root().SetHandler(glogger)

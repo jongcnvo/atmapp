@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"bytes"
 	"container/list"
 	"context"
 	"encoding/json"
@@ -44,6 +45,19 @@ const (
 	defaultWriteTimeout  = 10 * time.Second // used for calls if the context has no deadline
 	subscribeTimeout     = 5 * time.Second  // overall timeout atm_subscribe, rpc_modules calls
 )
+
+// BatchElem is an element in a batch request.
+type BatchElem struct {
+	Method string
+	Args   []interface{}
+	// The result is unmarshaled into this field. Result must be set to a
+	// non-nil pointer value of the desired type, otherwise the response will be
+	// discarded.
+	Result interface{}
+	// Error is set if the server returns an error for this request, or if
+	// unmarshaling into Result fails. It is not set for I/O errors.
+	Error error
+}
 
 // A value of this type can a JSON-RPC request, notification, successful response or
 // error response. Which one it is depends on the fields.
@@ -191,6 +205,84 @@ func (c *Client) CallContext(ctx context.Context, result interface{}, method str
 	default:
 		return json.Unmarshal(resp.Result, &result)
 	}
+}
+
+func (c *Client) sendBatchHTTP(ctx context.Context, op *requestOp, msgs []*jsonrpcMessage) error {
+	hc := c.writeConn.(*httpConn)
+	respBody, err := hc.doRequest(ctx, msgs)
+	if err != nil {
+		return err
+	}
+	defer respBody.Close()
+	var respmsgs []jsonrpcMessage
+	if err := json.NewDecoder(respBody).Decode(&respmsgs); err != nil {
+		return err
+	}
+	for i := 0; i < len(respmsgs); i++ {
+		op.resp <- &respmsgs[i]
+	}
+	return nil
+}
+
+// BatchCall sends all given requests as a single batch and waits for the server
+// to return a response for all of them. The wait duration is bounded by the
+// context's deadline.
+//
+// In contrast to CallContext, BatchCallContext only returns errors that have occurred
+// while sending the request. Any error specific to a request is reported through the
+// Error field of the corresponding BatchElem.
+//
+// Note that batch calls may not be executed atomically on the server side.
+func (c *Client) BatchCallContext(ctx context.Context, b []BatchElem) error {
+	msgs := make([]*jsonrpcMessage, len(b))
+	op := &requestOp{
+		ids:  make([]json.RawMessage, len(b)),
+		resp: make(chan *jsonrpcMessage, len(b)),
+	}
+	for i, elem := range b {
+		msg, err := c.newMessage(elem.Method, elem.Args...)
+		if err != nil {
+			return err
+		}
+		msgs[i] = msg
+		op.ids[i] = msg.ID
+	}
+
+	var err error
+	if c.isHTTP {
+		err = c.sendBatchHTTP(ctx, op, msgs)
+	} else {
+		err = c.send(ctx, op, msgs)
+	}
+
+	// Wait for all responses to come back.
+	for n := 0; n < len(b) && err == nil; n++ {
+		var resp *jsonrpcMessage
+		resp, err = op.wait(ctx)
+		if err != nil {
+			break
+		}
+		// Find the element corresponding to this response.
+		// The element is guaranteed to be present because dispatch
+		// only sends valid IDs to our channel.
+		var elem *BatchElem
+		for i := range msgs {
+			if bytes.Equal(msgs[i].ID, resp.ID) {
+				elem = &b[i]
+				break
+			}
+		}
+		if resp.Error != nil {
+			elem.Error = resp.Error
+			continue
+		}
+		if len(resp.Result) == 0 {
+			elem.Error = ErrNoResult
+			continue
+		}
+		elem.Error = json.Unmarshal(resp.Result, elem.Result)
+	}
+	return err
 }
 
 func (c *Client) newMessage(method string, paramsIn ...interface{}) (*jsonrpcMessage, error) {

@@ -2,11 +2,15 @@ package atmchain
 
 import (
 	"context"
+	"errors"
 	"math/big"
 
 	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/core/types"
 )
+
+// NotFound is returned by API methods if the requested item does not exist.
+var NotFound = errors.New("not found")
 
 // Subscription represents an event subscription where events are
 // delivered on a data channel.

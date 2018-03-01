@@ -58,12 +58,12 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Version:   "1.0",
 			Service:   NewPublicATMAPI(apiBackend),
 			Public:    true,
-		}, /*{
+		}, {
 			Namespace: "atm",
 			Version:   "1.0",
 			Service:   NewPublicBlockChainAPI(apiBackend),
 			Public:    true,
-		}, {
+		}, /*{
 			Namespace: "atm",
 			Version:   "1.0",
 			Service:   NewPublicTransactionPoolAPI(apiBackend, nonceLock),

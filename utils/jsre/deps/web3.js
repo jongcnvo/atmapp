@@ -2409,7 +2409,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     };
     
     /**
-     * Returns true if given string is a valid ATMChain block header bloom.
+     * Returns true if given string is a valid Ethereum block header bloom.
      *
      * @method isBloom
      * @param {String} hex encoded bloom filter
@@ -2508,10 +2508,12 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
     var RequestManager = require('./web3/requestmanager');
     var Iban = require('./web3/iban');
-    var ATM = require('./web3/methods/atm');
+    var ATM = require('./web3/methods/eth');
     var DB = require('./web3/methods/db');
+    var Shh = require('./web3/methods/shh');
     var Net = require('./web3/methods/net');
     var Personal = require('./web3/methods/personal');
+    var Swarm = require('./web3/methods/swarm');
     var Settings = require('./web3/settings');
     var version = require('./version.json');
     var utils = require('./utils/utils');
@@ -2530,8 +2532,10 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         this.currentProvider = provider;
         this.atm = new ATM(this);
         this.db = new DB(this);
+        this.shh = new Shh(this);
         this.net = new Net(this);
         this.personal = new Personal(this);
+        this.bzz = new Swarm(this);
         this.settings = new Settings();
         this.version = {
             api: version.version
@@ -2605,8 +2609,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 inputFormatter: utils.toDecimal
             }),
             new Property({
-                name: 'version.',
-                getter: 'atm_protocolVersion',
+                name: 'version.ethereum',
+                getter: 'eth_protocolVersion',
                 inputFormatter: utils.toDecimal
             }),
             new Property({
@@ -2628,7 +2632,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     module.exports = Web3;
     
     
-    },{"./utils/sha3":19,"./utils/utils":20,"./version.json":21,"./web3/batch":24,"./web3/extend":28,"./web3/httpprovider":32,"./web3/iban":33,"./web3/ipcprovider":34,"./web3/methods/db":37,"./web3/methods/atm":38,"./web3/methods/net":39,"./web3/methods/personal":40,"./web3/property":41,"./web3/requestmanager":42,"./web3/settings":43,"bignumber.js":"bignumber.js"}],23:[function(require,module,exports){
+    },{"./utils/sha3":19,"./utils/utils":20,"./version.json":21,"./web3/batch":24,"./web3/extend":28,"./web3/httpprovider":32,"./web3/iban":33,"./web3/ipcprovider":34,"./web3/methods/db":37,"./web3/methods/eth":38,"./web3/methods/net":39,"./web3/methods/personal":40,"./web3/methods/shh":41,"./web3/methods/swarm":42,"./web3/property":45,"./web3/requestmanager":46,"./web3/settings":47,"bignumber.js":"bignumber.js"}],23:[function(require,module,exports){
     /*
         This file is part of web3.js.
     
@@ -2707,7 +2711,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var o = this.encode(options);
         var formatter = this.decode.bind(this);
-        return new Filter(o, 'atm', this._requestManager, watches.atm(), formatter, callback);
+        return new Filter(o, 'eth', this._requestManager, watches.eth(), formatter, callback);
     };
     
     AllSolidityEvents.prototype.attachToContract = function (contract) {
@@ -2845,7 +2849,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         contract.abi.filter(function (json) {
             return json.type === 'function';
         }).map(function (json) {
-            return new SolidityFunction(contract._atm, json, contract.address);
+            return new SolidityFunction(contract._eth, json, contract.address);
         }).forEach(function (f) {
             f.attachToContract(contract);
         });
@@ -2863,11 +2867,11 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             return json.type === 'event';
         });
     
-        var All = new AllEvents(contract._atm._requestManager, events, contract.address);
+        var All = new AllEvents(contract._eth._requestManager, events, contract.address);
         All.attachToContract(contract);
     
         events.map(function (json) {
-            return new SolidityEvent(contract._atm._requestManager, json, contract.address);
+            return new SolidityEvent(contract._eth._requestManager, json, contract.address);
         }).forEach(function (e) {
             e.attachToContract(contract);
         });
@@ -2887,7 +2891,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             callbackFired = false;
     
         // wait for receipt
-        var filter = contract._atm.filter('latest', function(e){
+        var filter = contract._eth.filter('latest', function(e){
             if (!e && !callbackFired) {
                 count++;
     
@@ -2905,10 +2909,10 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
                 } else {
     
-                    contract._atm.getTransactionReceipt(contract.transactionHash, function(e, receipt){
+                    contract._eth.getTransactionReceipt(contract.transactionHash, function(e, receipt){
                         if(receipt && !callbackFired) {
     
-                            contract._atm.getCode(receipt.contractAddress, function(e, code){
+                            contract._eth.getCode(receipt.contractAddress, function(e, code){
                                 /*jshint maxcomplexity: 6 */
     
                                 if(callbackFired || !code)
@@ -2951,8 +2955,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
      * @method ContractFactory
      * @param {Array} abi
      */
-    var ContractFactory = function (atm, abi) {
-        this.atm = atm;
+    var ContractFactory = function (eth, abi) {
+        this.eth = eth;
         this.abi = abi;
     
         /**
@@ -2968,7 +2972,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         this.new = function () {
             /*jshint maxcomplexity: 7 */
             
-            var contract = new Contract(this.atm, this.abi);
+            var contract = new Contract(this.eth, this.abi);
     
             // parse arguments
             var options = {}; // required!
@@ -3000,7 +3004,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             if (callback) {
     
                 // wait for the contract address adn check if the code was deployed
-                this.atm.sendTransaction(options, function (err, hash) {
+                this.eth.sendTransaction(options, function (err, hash) {
                     if (err) {
                         callback(err);
                     } else {
@@ -3014,7 +3018,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                     }
                 });
             } else {
-                var hash = this.atm.sendTransaction(options);
+                var hash = this.eth.sendTransaction(options);
                 // add the transaction hash
                 contract.transactionHash = hash;
                 checkForContractAddress(contract);
@@ -3049,7 +3053,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
      * otherwise calls callback function (err, contract)
      */
     ContractFactory.prototype.at = function (address, callback) {
-        var contract = new Contract(this.atm, this.abi, address);
+        var contract = new Contract(this.eth, this.abi, address);
     
         // this functions are not part of prototype,
         // because we dont want to spoil the interface
@@ -3089,8 +3093,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
      * @param {Array} abi
      * @param {Address} contract address
      */
-    var Contract = function (atm, abi, address) {
-        this._atm = atm;
+    var Contract = function (eth, abi, address) {
+        this._eth = eth;
         this.transactionHash = null;
         this.address = address;
         this.abi = abi;
@@ -3332,7 +3336,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var o = this.encode(indexed, options);
         var formatter = this.decode.bind(this);
-        return new Filter(o, 'atm', this._requestManager, watches.atm(), formatter, callback);
+        return new Filter(o, 'eth', this._requestManager, watches.eth(), formatter, callback);
     };
     
     /**
@@ -3466,7 +3470,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
     
         switch(type) {
-            case 'atm':
+            case 'eth':
     
                 // make sure topics, get converted to hex
                 options.topics = options.topics || [];
@@ -3992,8 +3996,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     /**
      * This prototype should be used to call/sendTransaction to solidity functions
      */
-    var SolidityFunction = function (atm, json, address) {
-        this._atm = atm;
+    var SolidityFunction = function (eth, json, address) {
+        this._eth = eth;
         this._inputTypes = json.inputs.map(function (i) {
             return i.type;
         });
@@ -4095,12 +4099,12 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
     
         if (!callback) {
-            var output = this._atm.call(payload, defaultBlock);
+            var output = this._eth.call(payload, defaultBlock);
             return this.unpackOutput(output);
         }
     
         var self = this;
-        this._atm.call(payload, defaultBlock, function (error, output) {
+        this._eth.call(payload, defaultBlock, function (error, output) {
             if (error) return callback(error, null);
     
             var unpacked = null;
@@ -4130,10 +4134,10 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         }
     
         if (!callback) {
-            return this._atm.sendTransaction(payload);
+            return this._eth.sendTransaction(payload);
         }
     
-        this._atm.sendTransaction(payload, callback);
+        this._eth.sendTransaction(payload, callback);
     };
     
     /**
@@ -4147,10 +4151,10 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         var payload = this.toPayload(args);
     
         if (!callback) {
-            return this._atm.estimateGas(payload);
+            return this._eth.estimateGas(payload);
         }
     
-        this._atm.estimateGas(payload, callback);
+        this._eth.estimateGas(payload, callback);
     };
     
     /**
@@ -4199,7 +4203,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         var format = this.unpackOutput.bind(this);
     
         return {
-            method: this._constant ? 'atm_call' : 'atm_sendTransaction',
+            method: this._constant ? 'eth_call' : 'eth_sendTransaction',
             callback: callback,
             params: [payload],
             format: format
@@ -4492,7 +4496,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     };
     
     /**
-     * This method should be used to create iban object from atmchain address
+     * This method should be used to create iban object from ethereum address
      *
      * @method fromAddress
      * @param {String} address
@@ -4531,7 +4535,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
      * @return {Iban} the IBAN object
      */
     Iban.createIndirect = function (options) {
-        return Iban.fromBban('ATM' + options.institution + options.identifier);
+        return Iban.fromBban('ETH' + options.institution + options.identifier);
     };
     
     /**
@@ -4553,7 +4557,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
      * @returns {Boolean} true if it is, otherwise false
      */
     Iban.prototype.isValid = function () {
-        return /^XE[0-9]{2}(ATM[0-9A-Z]{13}|[0-9A-Z]{30,31})$/.test(this._iban) &&
+        return /^XE[0-9]{2}(ETH[0-9A-Z]{13}|[0-9A-Z]{30,31})$/.test(this._iban) &&
             mod9710(iso13616Prepare(this._iban)) === 1;
     };
     
@@ -5181,7 +5185,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         along with web3.js.  If not, see <http://www.gnu.org/licenses/>.
     */
     /**
-     * @file atm.js
+     * @file eth.js
      * @author Marek Kotewicz <marek@ethdev.com>
      * @author Fabian Vogelsteller <fabian@ethdev.com>
      * @date 2015
@@ -5203,23 +5207,23 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     var transfer = require('../transfer');
     
     var blockCall = function (args) {
-        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? "atm_getBlockByHash" : "atm_getBlockByNumber";
+        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? "eth_getBlockByHash" : "eth_getBlockByNumber";
     };
     
     var transactionFromBlockCall = function (args) {
-        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'atm_getTransactionByBlockHashAndIndex' : 'atm_getTransactionByBlockNumberAndIndex';
+        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'eth_getTransactionByBlockHashAndIndex' : 'eth_getTransactionByBlockNumberAndIndex';
     };
     
     var uncleCall = function (args) {
-        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'atm_getUncleByBlockHashAndIndex' : 'atm_getUncleByBlockNumberAndIndex';
+        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'eth_getUncleByBlockHashAndIndex' : 'eth_getUncleByBlockNumberAndIndex';
     };
     
     var getBlockTransactionCountCall = function (args) {
-        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'atm_getBlockTransactionCountByHash' : 'atm_getBlockTransactionCountByNumber';
+        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'eth_getBlockTransactionCountByHash' : 'eth_getBlockTransactionCountByNumber';
     };
     
     var uncleCountCall = function (args) {
-        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'atm_getUncleCountByBlockHash' : 'atm_getUncleCountByBlockNumber';
+        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'eth_getUncleCountByBlockHash' : 'eth_getUncleCountByBlockNumber';
     };
     
     function ATM(web3) {
@@ -5265,7 +5269,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     var methods = function () {
         var getBalance = new Method({
             name: 'getBalance',
-            call: 'atm_getBalance',
+            call: 'eth_getBalance',
             params: 2,
             inputFormatter: [formatters.inputAddressFormatter, formatters.inputDefaultBlockNumberFormatter],
             outputFormatter: formatters.outputBigNumberFormatter
@@ -5273,14 +5277,14 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var getStorageAt = new Method({
             name: 'getStorageAt',
-            call: 'atm_getStorageAt',
+            call: 'eth_getStorageAt',
             params: 3,
             inputFormatter: [null, utils.toHex, formatters.inputDefaultBlockNumberFormatter]
         });
     
         var getCode = new Method({
             name: 'getCode',
-            call: 'atm_getCode',
+            call: 'eth_getCode',
             params: 2,
             inputFormatter: [formatters.inputAddressFormatter, formatters.inputDefaultBlockNumberFormatter]
         });
@@ -5304,7 +5308,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var getCompilers = new Method({
             name: 'getCompilers',
-            call: 'atm_getCompilers',
+            call: 'eth_getCompilers',
             params: 0
         });
     
@@ -5326,7 +5330,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var getTransaction = new Method({
             name: 'getTransaction',
-            call: 'atm_getTransactionByHash',
+            call: 'eth_getTransactionByHash',
             params: 1,
             outputFormatter: formatters.outputTransactionFormatter
         });
@@ -5341,14 +5345,14 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var getTransactionReceipt = new Method({
             name: 'getTransactionReceipt',
-            call: 'atm_getTransactionReceipt',
+            call: 'eth_getTransactionReceipt',
             params: 1,
             outputFormatter: formatters.outputTransactionReceiptFormatter
         });
     
         var getTransactionCount = new Method({
             name: 'getTransactionCount',
-            call: 'atm_getTransactionCount',
+            call: 'eth_getTransactionCount',
             params: 2,
             inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
             outputFormatter: utils.toDecimal
@@ -5356,42 +5360,42 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var sendRawTransaction = new Method({
             name: 'sendRawTransaction',
-            call: 'atm_sendRawTransaction',
+            call: 'eth_sendRawTransaction',
             params: 1,
             inputFormatter: [null]
         });
     
         var sendTransaction = new Method({
             name: 'sendTransaction',
-            call: 'atm_sendTransaction',
+            call: 'eth_sendTransaction',
             params: 1,
             inputFormatter: [formatters.inputTransactionFormatter]
         });
     
         var signTransaction = new Method({
             name: 'signTransaction',
-            call: 'atm_signTransaction',
+            call: 'eth_signTransaction',
             params: 1,
             inputFormatter: [formatters.inputTransactionFormatter]
         });
     
         var sign = new Method({
             name: 'sign',
-            call: 'atm_sign',
+            call: 'eth_sign',
             params: 2,
             inputFormatter: [formatters.inputAddressFormatter, null]
         });
     
         var call = new Method({
             name: 'call',
-            call: 'atm_call',
+            call: 'eth_call',
             params: 2,
             inputFormatter: [formatters.inputCallFormatter, formatters.inputDefaultBlockNumberFormatter]
         });
     
         var estimateGas = new Method({
             name: 'estimateGas',
-            call: 'atm_estimateGas',
+            call: 'eth_estimateGas',
             params: 1,
             inputFormatter: [formatters.inputCallFormatter],
             outputFormatter: utils.toDecimal
@@ -5399,31 +5403,31 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var compileSolidity = new Method({
             name: 'compile.solidity',
-            call: 'atm_compileSolidity',
+            call: 'eth_compileSolidity',
             params: 1
         });
     
         var compileLLL = new Method({
             name: 'compile.lll',
-            call: 'atm_compileLLL',
+            call: 'eth_compileLLL',
             params: 1
         });
     
         var compileSerpent = new Method({
             name: 'compile.serpent',
-            call: 'atm_compileSerpent',
+            call: 'eth_compileSerpent',
             params: 1
         });
     
         var submitWork = new Method({
             name: 'submitWork',
-            call: 'atm_submitWork',
+            call: 'eth_submitWork',
             params: 3
         });
     
         var getWork = new Method({
             name: 'getWork',
-            call: 'atm_getWork',
+            call: 'eth_getWork',
             params: 0
         });
     
@@ -5459,39 +5463,39 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         return [
             new Property({
                 name: 'coinbase',
-                getter: 'atm_coinbase'
+                getter: 'eth_coinbase'
             }),
             new Property({
                 name: 'mining',
-                getter: 'atm_mining'
+                getter: 'eth_mining'
             }),
             new Property({
                 name: 'hashrate',
-                getter: 'atm_hashrate',
+                getter: 'eth_hashrate',
                 outputFormatter: utils.toDecimal
             }),
             new Property({
                 name: 'syncing',
-                getter: 'atm_syncing',
+                getter: 'eth_syncing',
                 outputFormatter: formatters.outputSyncingFormatter
             }),
             new Property({
                 name: 'gasPrice',
-                getter: 'atm_gasPrice',
+                getter: 'eth_gasPrice',
                 outputFormatter: formatters.outputBigNumberFormatter
             }),
             new Property({
                 name: 'accounts',
-                getter: 'atm_accounts'
+                getter: 'eth_accounts'
             }),
             new Property({
                 name: 'blockNumber',
-                getter: 'atm_blockNumber',
+                getter: 'eth_blockNumber',
                 outputFormatter: utils.toDecimal
             }),
             new Property({
                 name: 'protocolVersion',
-                getter: 'atm_protocolVersion'
+                getter: 'eth_protocolVersion'
             })
         ];
     };
@@ -5502,7 +5506,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     };
     
     ATM.prototype.filter = function (options, callback, filterCreationErrorCallback) {
-        return new Filter(options, 'atm', this._requestManager, watches.atm(), formatters.outputLogFormatter, callback, filterCreationErrorCallback);
+        return new Filter(options, 'eth', this._requestManager, watches.eth(), formatters.outputLogFormatter, callback, filterCreationErrorCallback);
     };
     
     ATM.prototype.namereg = function () {
@@ -6009,7 +6013,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     var Method = require('../method');
     
     /// @returns an array of objects describing web3.eth.filter api methods
-    var atm = function () {
+    var eth = function () {
         var newFilterCall = function (args) {
             var type = args[0];
     
@@ -6017,13 +6021,13 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 case 'latest':
                     args.shift();
                     this.params = 0;
-                    return 'atm_newBlockFilter';
+                    return 'eth_newBlockFilter';
                 case 'pending':
                     args.shift();
                     this.params = 0;
-                    return 'atm_newPendingTransactionFilter';
+                    return 'eth_newPendingTransactionFilter';
                 default:
-                    return 'atm_newFilter';
+                    return 'eth_newFilter';
             }
         };
     
@@ -6035,19 +6039,19 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var uninstallFilter = new Method({
             name: 'uninstallFilter',
-            call: 'atm_uninstallFilter',
+            call: 'eth_uninstallFilter',
             params: 1
         });
     
         var getLogs = new Method({
             name: 'getLogs',
-            call: 'atm_getFilterLogs',
+            call: 'eth_getFilterLogs',
             params: 1
         });
     
         var poll = new Method({
             name: 'poll',
-            call: 'atm_getFilterChanges',
+            call: 'eth_getFilterChanges',
             params: 1
         });
     
@@ -6087,7 +6091,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     };
     
     module.exports = {
-        atm: atm
+        eth: eth,
+        shh: shh
     };
     
     
@@ -6312,7 +6317,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
     /**
      * It's responsible for passing messages to providers
-     * It's also responsible for polling the atmchain node for incoming messages
+     * It's also responsible for polling the ethereum node for incoming messages
      * Default poll timeout is 1 second
      * Singleton
      */
@@ -6620,7 +6625,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         };
     
         self.requestManager.startPolling({
-            method: 'atm_syncing',
+            method: 'eth_syncing',
             params: [],
         }, self.pollId, onMessage, self.stopWatching.bind(self));
     
@@ -6686,23 +6691,23 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
      * @param {Value} value to be tranfered
      * @param {Function} callback, callback
      */
-    var transfer = function (atm, from, to, value, callback) {
+    var transfer = function (eth, from, to, value, callback) {
         var iban = new Iban(to); 
         if (!iban.isValid()) {
             throw new Error('invalid iban address');
         }
     
         if (iban.isDirect()) {
-            return transferToAddress(atm, from, iban.address(), value, callback);
+            return transferToAddress(eth, from, iban.address(), value, callback);
         }
         
         if (!callback) {
-            var address = atm.icapNamereg().addr(iban.institution());
-            return deposit(atm, from, address, value, iban.client());
+            var address = eth.icapNamereg().addr(iban.institution());
+            return deposit(eth, from, address, value, iban.client());
         }
     
-        atm.icapNamereg().addr(iban.institution(), function (err, address) {
-            return deposit(atm, from, address, value, iban.client(), callback);
+        eth.icapNamereg().addr(iban.institution(), function (err, address) {
+            return deposit(eth, from, address, value, iban.client(), callback);
         });
         
     };
@@ -6716,8 +6721,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
      * @param {Value} value to be tranfered
      * @param {Function} callback, callback
      */
-    var transferToAddress = function (atm, from, to, value, callback) {
-        return atm.sendTransaction({
+    var transferToAddress = function (eth, from, to, value, callback) {
+        return eth.sendTransaction({
             address: to,
             from: from,
             value: value
@@ -6734,9 +6739,9 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
      * @param {String} client unique identifier
      * @param {Function} callback, callback
      */
-    var deposit = function (atm, from, to, value, client, callback) {
+    var deposit = function (eth, from, to, value, client, callback) {
         var abi = exchangeAbi;
-        return atm.contract(abi).at(to).deposit(client, {
+        return eth.contract(abi).at(to).deposit(client, {
             from: from,
             value: value
         }, callback);

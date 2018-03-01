@@ -1,8 +1,12 @@
 package atmapi
 
 import (
+	"context"
+	"math/big"
+
 	"github.com/atmchain/atmapp/accounts"
 	"github.com/atmchain/atmapp/p2p"
+	"github.com/atmchain/atmapp/rpc"
 )
 
 // PublicATMAPI provides an API to access ATMChain related information.
@@ -30,6 +34,12 @@ type PublicBlockChainAPI struct {
 // NewPublicBlockChainAPI creates a new ATMChain blockchain API.
 func NewPublicBlockChainAPI(b Backend) *PublicBlockChainAPI {
 	return &PublicBlockChainAPI{b}
+}
+
+// BlockNumber returns the block number of the chain head.
+func (s *PublicBlockChainAPI) BlockNumber() *big.Int {
+	header, _ := s.b.HeaderByNumber(context.Background(), rpc.LatestBlockNumber) // latest header should always be available
+	return header.Number
 }
 
 // PublicTransactionPoolAPI exposes methods for the RPC interface
