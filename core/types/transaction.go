@@ -127,6 +127,10 @@ func (tx *Transaction) Cost() *big.Int {
 	return total
 }
 
+func (tx *Transaction) RawSignatureValues() (*big.Int, *big.Int, *big.Int) {
+	return tx.data.V, tx.data.R, tx.data.S
+}
+
 // WithSignature returns a new transaction with the given signature.
 // This signature needs to be formatted as described in the yellow paper (v+27).
 func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, error) {

@@ -5207,7 +5207,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     var transfer = require('../transfer');
     
     var blockCall = function (args) {
-        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? "eth_getBlockByHash" : "eth_getBlockByNumber";
+        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? "atm_getBlockByHash" : "atm_getBlockByNumber";
     };
     
     var transactionFromBlockCall = function (args) {

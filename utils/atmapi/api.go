@@ -6,6 +6,8 @@ import (
 
 	"github.com/atmchain/atmapp/accounts"
 	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/common/hexutil"
+	"github.com/atmchain/atmapp/core/types"
 	"github.com/atmchain/atmapp/p2p"
 	"github.com/atmchain/atmapp/rpc"
 )
@@ -41,6 +43,149 @@ func NewPublicBlockChainAPI(b Backend) *PublicBlockChainAPI {
 func (s *PublicBlockChainAPI) BlockNumber() *big.Int {
 	header, _ := s.b.HeaderByNumber(context.Background(), rpc.LatestBlockNumber) // latest header should always be available
 	return header.Number
+}
+
+// GetBlockByNumber returns the requested block. When blockNr is -1 the chain head is returned. When fullTx is true all
+// transactions in the block are returned in full detail, otherwise only the transaction hash is returned.
+func (s *PublicBlockChainAPI) GetBlockByNumber(ctx context.Context, blockNr rpc.BlockNumber, fullTx bool) (map[string]interface{}, error) {
+	block, err := s.b.BlockByNumber(ctx, blockNr)
+	if block != nil {
+		response, err := s.rpcOutputBlock(block, true, fullTx)
+		if err == nil && blockNr == rpc.PendingBlockNumber {
+			// Pending blocks need to nil out a few fields
+			for _, field := range []string{"hash", "nonce", "miner"} {
+				response[field] = nil
+			}
+		}
+		return response, err
+	}
+	return nil, err
+}
+
+// rpcOutputBlock converts the given block to the RPC output which depends on fullTx. If inclTx is true transactions are
+// returned. When fullTx is true the returned block contains full transaction details, otherwise it will only contain
+// transaction hashes.
+func (s *PublicBlockChainAPI) rpcOutputBlock(b *types.Block, inclTx bool, fullTx bool) (map[string]interface{}, error) {
+	head := b.Header() // copies the header once
+	fields := map[string]interface{}{
+		"number":           (*hexutil.Big)(head.Number),
+		"hash":             b.Hash(),
+		"parentHash":       head.ParentHash,
+		"nonce":            head.Nonce,
+		"mixHash":          head.MixDigest,
+		"sha3Uncles":       head.UncleHash,
+		"logsBloom":        head.Bloom,
+		"stateRoot":        head.Root,
+		"miner":            head.Coinbase,
+		"difficulty":       (*hexutil.Big)(head.Difficulty),
+		"totalDifficulty":  (*hexutil.Big)(s.b.GetTd(b.Hash())),
+		"extraData":        hexutil.Bytes(head.Extra),
+		"size":             hexutil.Uint64(uint64(b.Size().Int64())),
+		"gasLimit":         hexutil.Uint64(head.GasLimit),
+		"gasUsed":          hexutil.Uint64(head.GasUsed),
+		"timestamp":        (*hexutil.Big)(head.Time),
+		"transactionsRoot": head.TxHash,
+		"receiptsRoot":     head.ReceiptHash,
+	}
+
+	if inclTx {
+		formatTx := func(tx *types.Transaction) (interface{}, error) {
+			return tx.Hash(), nil
+		}
+
+		if fullTx {
+			formatTx = func(tx *types.Transaction) (interface{}, error) {
+				return newRPCTransactionFromBlockHash(b, tx.Hash()), nil
+			}
+		}
+
+		txs := b.Transactions()
+		transactions := make([]interface{}, len(txs))
+		var err error
+		for i, tx := range b.Transactions() {
+			if transactions[i], err = formatTx(tx); err != nil {
+				return nil, err
+			}
+		}
+		fields["transactions"] = transactions
+	}
+
+	uncles := b.Uncles()
+	uncleHashes := make([]common.Hash, len(uncles))
+	for i, uncle := range uncles {
+		uncleHashes[i] = uncle.Hash()
+	}
+	fields["uncles"] = uncleHashes
+
+	return fields, nil
+}
+
+// RPCTransaction represents a transaction that will serialize to the RPC representation of a transaction
+type RPCTransaction struct {
+	BlockHash        common.Hash     `json:"blockHash"`
+	BlockNumber      *big.Int        `json:"blockNumber"`
+	From             common.Address  `json:"from"`
+	Gas              uint64          `json:"gas"`
+	GasPrice         *big.Int        `json:"gasPrice"`
+	Hash             common.Hash     `json:"hash"`
+	Input            []byte          `json:"input"`
+	Nonce            uint64          `json:"nonce"`
+	To               *common.Address `json:"to"`
+	TransactionIndex uint            `json:"transactionIndex"`
+	Value            *big.Int        `json:"value"`
+	V                *big.Int        `json:"v"`
+	R                *big.Int        `json:"r"`
+	S                *big.Int        `json:"s"`
+}
+
+// newRPCTransaction returns a transaction that will serialize to the RPC
+// representation, with the given location metadata set (if available).
+func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64) *RPCTransaction {
+	var signer types.Signer = types.FrontierSigner{}
+	if tx.Protected() {
+		signer = types.NewEIP155Signer(tx.ChainId())
+	}
+	from, _ := types.Sender(signer, tx)
+	v, r, s := tx.RawSignatureValues()
+
+	result := &RPCTransaction{
+		From:     from,
+		Gas:      uint64(tx.Gas()),
+		GasPrice: (*big.Int)(tx.GasPrice()),
+		Hash:     tx.Hash(),
+		Input:    []byte(tx.Data()),
+		Nonce:    uint64(tx.Nonce()),
+		To:       tx.To(),
+		Value:    (*big.Int)(tx.Value()),
+		V:        (*big.Int)(v),
+		R:        (*big.Int)(r),
+		S:        (*big.Int)(s),
+	}
+	if blockHash != (common.Hash{}) {
+		result.BlockHash = blockHash
+		result.BlockNumber = (*big.Int)(new(big.Int).SetUint64(blockNumber))
+		result.TransactionIndex = uint(index)
+	}
+	return result
+}
+
+// newRPCTransactionFromBlockHash returns a transaction that will serialize to the RPC representation.
+func newRPCTransactionFromBlockHash(b *types.Block, hash common.Hash) *RPCTransaction {
+	for idx, tx := range b.Transactions() {
+		if tx.Hash() == hash {
+			return newRPCTransactionFromBlockIndex(b, uint64(idx))
+		}
+	}
+	return nil
+}
+
+// newRPCTransactionFromBlockIndex returns a transaction that will serialize to the RPC representation.
+func newRPCTransactionFromBlockIndex(b *types.Block, index uint64) *RPCTransaction {
+	txs := b.Transactions()
+	if index >= uint64(len(txs)) {
+		return nil
+	}
+	return newRPCTransaction(txs[index], b.Hash(), b.NumberU64(), index)
 }
 
 // PublicTransactionPoolAPI exposes methods for the RPC interface

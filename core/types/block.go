@@ -34,7 +34,7 @@ type Header struct {
 	Root        common.Hash       `json:"stateRoot"        gencodec:"required"`
 	TxHash      common.Hash       `json:"transactionsRoot" gencodec:"required"`
 	ReceiptHash common.Hash       `json:"receiptsRoot"     gencodec:"required"`
-	Bloom       common.Bloom      `json:"logsBloom"        gencodec:"required"`
+	Bloom       Bloom             `json:"logsBloom"        gencodec:"required"`
 	Difficulty  *big.Int          `json:"difficulty"       gencodec:"required"`
 	Number      *big.Int          `json:"number"           gencodec:"required"`
 	GasLimit    uint64            `json:"gasLimit"         gencodec:"required"`
@@ -194,6 +194,16 @@ func (b *Block) GasUsed() uint64         { return b.header.GasUsed }
 func (b *Block) Root() common.Hash       { return b.header.Root }
 func (b *Block) Difficulty() *big.Int    { return new(big.Int).Set(b.header.Difficulty) }
 func (b *Block) GasLimit() uint64        { return b.header.GasLimit }
+
+func (b *Block) Size() common.StorageSize {
+	if size := b.size.Load(); size != nil {
+		return size.(common.StorageSize)
+	}
+	c := writeCounter(0)
+	rlp.Encode(&c, b)
+	b.size.Store(common.StorageSize(c))
+	return common.StorageSize(c)
+}
 
 type writeCounter common.StorageSize
 

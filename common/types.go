@@ -12,6 +12,13 @@ import (
 	"runtime"
 	"runtime/debug"
 	"time"
+
+	"github.com/atmchain/atmapp/common/hexutil"
+)
+
+var (
+	hashT    = reflect.TypeOf(Hash{})
+	addressT = reflect.TypeOf(Address{})
 )
 
 // PrettyDuration is a pretty printed version of a time.Duration value that cuts
@@ -62,17 +69,6 @@ type Address [AddressLength]byte
 // mix-hash) that a sufficient amount of computation has been carried
 // out on a block.
 type BlockNonce [8]byte
-
-const (
-	// BloomByteLength represents the number of bytes used in a header log bloom.
-	BloomByteLength = 256
-
-	// BloomBitLength represents the number of bits used in a header log bloom.
-	BloomBitLength = 8 * BloomByteLength
-)
-
-// Bloom represents a 2048 bit bloom filter.
-type Bloom [BloomByteLength]byte
 
 var bytesT = reflect.TypeOf(Bytes(nil))
 
@@ -205,23 +201,6 @@ func (a *Address) UnmarshalText(input []byte) error {
 /*func (a Address) String() string {
 	return a.Hex()
 }*/
-
-// SetBytes sets the content of b to the given bytes.
-// It panics if d is not of suitable size.
-func (b *Bloom) SetBytes(d []byte) {
-	if len(b) < len(d) {
-		panic(fmt.Sprintf("bloom bytes too big %d %d", len(b), len(d)))
-	}
-	copy(b[BloomByteLength-len(d):], d)
-}
-
-// BytesToBloom converts a byte slice to a bloom filter.
-// It panics if b is not of suitable size.
-func BytesToBloom(b []byte) Bloom {
-	var bloom Bloom
-	bloom.SetBytes(b)
-	return bloom
-}
 
 // EncodeNonce converts the given integer to a block nonce.
 func EncodeNonce(i uint64) BlockNonce {
@@ -384,4 +363,35 @@ func Report(extra ...interface{}) {
 	debug.PrintStack()
 
 	fmt.Fprintln(os.Stderr, "#### BUG! PLEASE REPORT ####")
+}
+
+// Format implements fmt.Formatter, forcing the byte slice to be formatted as is,
+// without going through the stringer interface used for logging.
+func (h Hash) Format(s fmt.State, c rune) {
+	fmt.Fprintf(s, "%"+string(c), h[:])
+}
+
+// UnmarshalText parses a hash in hex syntax.
+func (h *Hash) UnmarshalText(input []byte) error {
+	return hexutil.UnmarshalFixedText("Hash", input, h[:])
+}
+
+// UnmarshalJSON parses a hash in hex syntax.
+func (h *Hash) UnmarshalJSON(input []byte) error {
+	return hexutil.UnmarshalFixedJSON(hashT, input, h[:])
+}
+
+// MarshalText returns the hex representation of h.
+func (h Hash) MarshalText() ([]byte, error) {
+	return hexutil.Bytes(h[:]).MarshalText()
+}
+
+// Set string `s` to h. If s is larger than len(h) s will be cropped (from left) to fit.
+func (h *Hash) SetString(s string) { h.SetBytes([]byte(s)) }
+
+// Sets h to other
+func (h *Hash) Set(other Hash) {
+	for i, v := range other {
+		h[i] = v
+	}
 }
