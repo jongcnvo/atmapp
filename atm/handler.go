@@ -357,6 +357,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		return p.SendBlockHeaders(headers)
 
 	case msg.Code == BlockHeadersMsg:
+		log.Info("Receive BlockHeadersMsg received")
 		// A batch of headers arrived to one of our previous requests
 		var headers []*types.Header
 		if err := msg.Decode(&headers); err != nil {

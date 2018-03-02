@@ -808,6 +808,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64) error {
 			return errCancelHeaderFetch
 
 		case packet := <-d.headerCh:
+			log.Info("Received d.headerCh")
 			// Make sure the active peer is giving us the skeleton headers
 			if packet.PeerId() != p.id {
 				log.Debug("Received skeleton from incorrect peer", "peer", packet.PeerId())
