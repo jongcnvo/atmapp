@@ -1,11 +1,12 @@
 package discover
 
 import (
-	"github.com/atmchain/atmapp/log"
 	"fmt"
 	"net"
 	"sort"
 	"time"
+
+	"github.com/atmchain/atmapp/log"
 )
 
 const (

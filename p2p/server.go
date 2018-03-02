@@ -6,15 +6,17 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"github.com/atmchain/atmapp/common"
-	"github.com/atmchain/atmapp/log"
-	"github.com/atmchain/atmapp/p2p/discover"
-	"github.com/atmchain/atmapp/p2p/nat"
-	"github.com/atmchain/atmapp/rlp"
 	"io"
 	"net"
 	"sync"
 	"time"
+
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/p2p/discover"
+	"github.com/atmchain/atmapp/p2p/nat"
+	"github.com/atmchain/atmapp/p2p/netutil"
+	"github.com/atmchain/atmapp/rlp"
 )
 
 var errServerStopped = errors.New("server stopped")
@@ -117,7 +119,7 @@ type Config struct {
 	// Connectivity can be restricted to certain IP networks.
 	// If this option is set to a non-nil value, only hosts which match one of the
 	// IP networks contained in the list are considered.
-	NetRestrict *discover.Netlist `toml:",omitempty"`
+	NetRestrict *netutil.Netlist `toml:",omitempty"`
 
 	// NodeDatabase is the path to the database containing the previously seen
 	// live nodes in the network.
@@ -908,7 +910,7 @@ func (srv *Server) encHandshakeChecks(peers map[discover.NodeID]*Peer, c *conn) 
 type dialstate struct {
 	maxDynDials int
 	ntab        discoverTable
-	netrestrict *discover.Netlist
+	netrestrict *netutil.Netlist
 
 	lookupRunning bool
 	dialing       map[discover.NodeID]connFlag
@@ -966,7 +968,7 @@ type pastDial struct {
 	exp time.Time
 }
 
-func newDialState(static []*discover.Node, bootnodes []*discover.Node, ntab discoverTable, maxdyn int, netrestrict *discover.Netlist) *dialstate {
+func newDialState(static []*discover.Node, bootnodes []*discover.Node, ntab discoverTable, maxdyn int, netrestrict *netutil.Netlist) *dialstate {
 	s := &dialstate{
 		maxDynDials: maxdyn,
 		ntab:        ntab,

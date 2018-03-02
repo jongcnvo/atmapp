@@ -1,13 +1,14 @@
 package discover
 
 import (
+	"crypto/ecdsa"
+	"encoding/hex"
+	"crypto/elliptic"
+	"errors"
+	"fmt"
 	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/crypto"
 	"github.com/atmchain/atmapp/crypto/secp256k1"
-	"crypto/ecdsa"
-	"encoding/hex"
-	"errors"
-	"fmt"
 	"math/big"
 	"net"
 	"net/url"
@@ -37,28 +38,6 @@ type Node struct {
 	contested bool
 }
 
-// NodeID is a unique identifier for each node.
-// The node identifier is a marshaled elliptic curve public key.
-type NodeID [NodeIDBits / 8]byte
-
-// NodeID prints as a long hexadecimal number.
-func (n NodeID) String() string {
-	return fmt.Sprintf("%x", n[:])
-}
-
-// Pubkey returns the public key represented by the node ID.
-// It returns an error if the ID is not a point on the curve.
-func (id NodeID) Pubkey() (*ecdsa.PublicKey, error) {
-	p := &ecdsa.PublicKey{Curve: crypto.S256(), X: new(big.Int), Y: new(big.Int)}
-	half := len(id) / 2
-	p.X.SetBytes(id[:half])
-	p.Y.SetBytes(id[half:])
-	if !p.Curve.IsOnCurve(p.X, p.Y) {
-		return nil, errors.New("id is invalid secp256k1 curve point")
-	}
-	return p, nil
-}
-
 // NewNode creates a new node. It is mostly meant to be used for
 // testing purposes.
 func NewNode(id NodeID, ip net.IP, udpPort, tcpPort uint16) *Node {
@@ -72,6 +51,50 @@ func NewNode(id NodeID, ip net.IP, udpPort, tcpPort uint16) *Node {
 		ID:  id,
 		sha: crypto.Keccak256Hash(id[:]),
 	}
+}
+
+func (n *Node) addr() *net.UDPAddr {
+	return &net.UDPAddr{IP: n.IP, Port: int(n.UDP)}
+}
+
+// Incomplete returns true for nodes with no IP address.
+func (n *Node) Incomplete() bool {
+	return n.IP == nil
+}
+
+// checks whether n is a valid complete node.
+func (n *Node) validateComplete() error {
+	if n.Incomplete() {
+		return errors.New("incomplete node")
+	}
+	if n.UDP == 0 {
+		return errors.New("missing UDP port")
+	}
+	if n.TCP == 0 {
+		return errors.New("missing TCP port")
+	}
+	if n.IP.IsMulticast() || n.IP.IsUnspecified() {
+		return errors.New("invalid IP (multicast/unspecified)")
+	}
+	_, err := n.ID.Pubkey() // validate the key (on curve, etc.)
+	return err
+}
+
+// The string representation of a Node is a URL.
+// Please see ParseNode for a description of the format.
+func (n *Node) String() string {
+	u := url.URL{Scheme: "enode"}
+	if n.Incomplete() {
+		u.Host = fmt.Sprintf("%x", n.ID[:])
+	} else {
+		addr := net.TCPAddr{IP: n.IP, Port: int(n.TCP)}
+		u.User = url.User(fmt.Sprintf("%x", n.ID[:]))
+		u.Host = addr.String()
+		if n.UDP != n.TCP {
+			u.RawQuery = "discport=" + strconv.Itoa(int(n.UDP))
+		}
+	}
+	return u.String()
 }
 
 var incompleteNodeURL = regexp.MustCompile("(?i)^(?:enode://)?([0-9a-f]+)$")
@@ -157,6 +180,15 @@ func parseComplete(rawurl string) (*Node, error) {
 	return NewNode(id, ip, uint16(udpPort), uint16(tcpPort)), nil
 }
 
+// NodeID is a unique identifier for each node.
+// The node identifier is a marshaled elliptic curve public key.
+type NodeID [NodeIDBits / 8]byte
+
+// NodeID prints as a long hexadecimal number.
+func (n NodeID) String() string {
+	return fmt.Sprintf("%x", n[:])
+}
+
 // HexID converts a hex string to a NodeID.
 // The string may be prefixed with 0x.
 func HexID(in string) (NodeID, error) {
@@ -171,48 +203,28 @@ func HexID(in string) (NodeID, error) {
 	return id, nil
 }
 
-// Incomplete returns true for nodes with no IP address.
-func (n *Node) Incomplete() bool {
-	return n.IP == nil
+// PubkeyID returns a marshaled representation of the given public key.
+func PubkeyID(pub *ecdsa.PublicKey) NodeID {
+	var id NodeID
+	pbytes := elliptic.Marshal(pub.Curve, pub.X, pub.Y)
+	if len(pbytes)-1 != len(id) {
+		panic(fmt.Errorf("need %d bit pubkey, got %d bits", (len(id)+1)*8, len(pbytes)))
+	}
+	copy(id[:], pbytes[1:])
+	return id
 }
 
-func (n *Node) addr() *net.UDPAddr {
-	return &net.UDPAddr{IP: n.IP, Port: int(n.UDP)}
-}
-
-// checks whether n is a valid complete node.
-func (n *Node) validateComplete() error {
-	if n.Incomplete() {
-		return errors.New("incomplete node")
+// Pubkey returns the public key represented by the node ID.
+// It returns an error if the ID is not a point on the curve.
+func (id NodeID) Pubkey() (*ecdsa.PublicKey, error) {
+	p := &ecdsa.PublicKey{Curve: crypto.S256(), X: new(big.Int), Y: new(big.Int)}
+	half := len(id) / 2
+	p.X.SetBytes(id[:half])
+	p.Y.SetBytes(id[half:])
+	if !p.Curve.IsOnCurve(p.X, p.Y) {
+		return nil, errors.New("id is invalid secp256k1 curve point")
 	}
-	if n.UDP == 0 {
-		return errors.New("missing UDP port")
-	}
-	if n.TCP == 0 {
-		return errors.New("missing TCP port")
-	}
-	if n.IP.IsMulticast() || n.IP.IsUnspecified() {
-		return errors.New("invalid IP (multicast/unspecified)")
-	}
-	_, err := n.ID.Pubkey() // validate the key (on curve, etc.)
-	return err
-}
-
-// The string representation of a Node is a URL.
-// Please see ParseNode for a description of the format.
-func (n *Node) String() string {
-	u := url.URL{Scheme: "enode"}
-	if n.Incomplete() {
-		u.Host = fmt.Sprintf("%x", n.ID[:])
-	} else {
-		addr := net.TCPAddr{IP: n.IP, Port: int(n.TCP)}
-		u.User = url.User(fmt.Sprintf("%x", n.ID[:]))
-		u.Host = addr.String()
-		if n.UDP != n.TCP {
-			u.RawQuery = "discport=" + strconv.Itoa(int(n.UDP))
-		}
-	}
-	return u.String()
+	return p, nil
 }
 
 // recoverNodeID computes the public key used to sign the
