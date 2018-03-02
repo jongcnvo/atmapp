@@ -5486,16 +5486,16 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
             }),
             new Property({
                 name: 'accounts',
-                getter: 'eth_accounts'
+                getter: 'atm_accounts'
             }),
             new Property({
                 name: 'blockNumber',
-                getter: 'eth_blockNumber',
+                getter: 'atm_blockNumber',
                 outputFormatter: utils.toDecimal
             }),
             new Property({
                 name: 'protocolVersion',
-                getter: 'eth_protocolVersion'
+                getter: 'atm_protocolVersion'
             })
         ];
     };

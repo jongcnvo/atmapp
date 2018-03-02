@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/atmchain/atmapp/accounts"
+	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/p2p"
 	"github.com/atmchain/atmapp/rpc"
 )
@@ -22,7 +23,7 @@ func NewPublicATMAPI(b Backend) *PublicATMAPI {
 
 // ProtocolVersion returns the current ATMChain protocol version this node supports
 func (s *PublicATMAPI) ProtocolVersion() uint {
-	return 0 //hexutil.Uint(s.b.ProtocolVersion())
+	return uint(s.b.ProtocolVersion())
 }
 
 // PublicBlockChainAPI provides an API to access the ATMChain blockchain.
@@ -96,6 +97,17 @@ type PublicAccountAPI struct {
 // NewPublicAccountAPI creates a new PublicAccountAPI.
 func NewPublicAccountAPI(am *accounts.Manager) *PublicAccountAPI {
 	return &PublicAccountAPI{am: am}
+}
+
+// Accounts returns the collection of accounts this node manages
+func (s *PublicAccountAPI) Accounts() []common.Address {
+	addresses := make([]common.Address, 0) // return [] instead of nil if empty
+	for _, wallet := range s.am.Wallets() {
+		for _, account := range wallet.Accounts() {
+			addresses = append(addresses, account.Address)
+		}
+	}
+	return addresses
 }
 
 // PrivateAccountAPI provides an API to access accounts managed by this node.

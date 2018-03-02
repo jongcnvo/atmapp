@@ -332,3 +332,4 @@ func (s *ATM) ChainDb() db.Database              { return s.chainDb }
 func (s *ATM) TxPool() *core.TxPool              { return s.txPool }
 func (s *ATM) AccountManager() *accounts.Manager { return s.accountManager }
 func (s *ATM) NetVersion() uint64                { return s.networkId }
+func (s *ATM) ATMVersion() int                   { return int(s.protocolManager.SubProtocols[0].Version) }

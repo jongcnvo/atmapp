@@ -106,3 +106,7 @@ func (b *ATMApiBackend) AccountManager() *accounts.Manager {
 func (b *ATMApiBackend) ChainDb() db.Database {
 	return b.atm.ChainDb()
 }
+
+func (b *ATMApiBackend) ProtocolVersion() int {
+	return b.atm.ATMVersion()
+}

@@ -18,7 +18,7 @@ import (
 type Backend interface {
 	// General ATMChain API
 	//Downloader() *downloader.Downloader
-	//ProtocolVersion() int
+	ProtocolVersion() int
 	//SuggestPrice(ctx context.Context) (*big.Int, error)
 	ChainDb() db.Database
 	//EventMux() *event.TypeMux
@@ -82,12 +82,13 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Namespace: "debug",
 			Version:   "1.0",
 			Service:   NewPrivateDebugAPI(apiBackend),
-		}, {
+		},
+		*/{
 			Namespace: "atm",
 			Version:   "1.0",
 			Service:   NewPublicAccountAPI(apiBackend.AccountManager()),
 			Public:    true,
-		}, {
+		}, /*{
 			Namespace: "personal",
 			Version:   "1.0",
 			Service:   NewPrivateAccountAPI(apiBackend, nonceLock),
