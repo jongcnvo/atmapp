@@ -2,9 +2,8 @@ package p2p
 
 import (
 	"fmt"
+
 	"github.com/atmchain/atmapp/p2p/discover"
-	"github.com/atmchain/atmapp/rlp"
-	"io"
 )
 
 // Protocol represents a P2P subprotocol implementation.
@@ -51,18 +50,6 @@ func (cs capsByNameAndVersion) Less(i, j int) bool {
 	return cs[i].Name < cs[j].Name || (cs[i].Name == cs[j].Name && cs[i].Version < cs[j].Version)
 }
 
-// protoHandshake is the RLP structure of the protocol handshake.
-type protoHandshake struct {
-	Version    uint64
-	Name       string
-	Caps       []Cap
-	ListenPort uint64
-	ID         discover.NodeID
-
-	// Ignore additional fields (for forward compatibility).
-	Rest []rlp.RawValue `rlp:"tail"`
-}
-
 // Cap is the structure of a peer capability.
 type Cap struct {
 	Name    string
@@ -75,51 +62,4 @@ func (cap Cap) RlpData() interface{} {
 
 func (cap Cap) String() string {
 	return fmt.Sprintf("%s/%d", cap.Name, cap.Version)
-}
-
-type protoRW struct {
-	Protocol
-	in     chan Msg        // receices read messages
-	closed <-chan struct{} // receives when peer is shutting down
-	wstart <-chan struct{} // receives when write may start
-	werr   chan<- error    // for write results
-	offset uint64
-	w      MsgWriter
-}
-
-func (rw *protoRW) WriteMsg(msg Msg) (err error) {
-	if msg.Code >= rw.Length {
-		return newPeerError(errInvalidMsgCode, "not handled")
-	}
-	msg.Code += rw.offset
-	select {
-	case <-rw.wstart:
-		err = rw.w.WriteMsg(msg)
-		// Report write status back to Peer.run. It will initiate
-		// shutdown if the error is non-nil and unblock the next write
-		// otherwise. The calling protocol code should exit for errors
-		// as well but we don't want to rely on that.
-		rw.werr <- err
-	case <-rw.closed:
-		err = fmt.Errorf("shutting down")
-	}
-	return err
-}
-
-func (rw *protoRW) ReadMsg() (Msg, error) {
-	select {
-	case msg := <-rw.in:
-		msg.Code -= rw.offset
-		return msg, nil
-	case <-rw.closed:
-		return Msg{}, io.EOF
-	}
-}
-
-type discoverTable interface {
-	Self() *discover.Node
-	Close()
-	Resolve(target discover.NodeID) *discover.Node
-	Lookup(target discover.NodeID) []*discover.Node
-	ReadRandomNodes([]*discover.Node) int
 }

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/event"
 	"github.com/atmchain/atmapp/log"
 	"github.com/atmchain/atmapp/p2p/discover"
 	"github.com/atmchain/atmapp/p2p/nat"
@@ -21,16 +22,11 @@ import (
 
 var errServerStopped = errors.New("server stopped")
 
-var (
-	errSelf             = errors.New("is self")
-	errAlreadyDialing   = errors.New("already dialing")
-	errAlreadyConnected = errors.New("already connected")
-	errRecentlyDialed   = errors.New("recently dialed")
-	errNotWhitelisted   = errors.New("not contained in netrestrict whitelist")
-)
-
 const (
-	defaultDialTimeout = 15 * time.Second
+	defaultDialTimeout      = 15 * time.Second
+	refreshPeersInterval    = 30 * time.Second
+	staticPeerCheckInterval = 15 * time.Second
+
 	// Maximum number of concurrently handshaking inbound connections.
 	maxAcceptConns = 50
 
@@ -52,16 +48,7 @@ const (
 
 	// Maximum amount of time allowed for writing a complete message.
 	frameWriteTimeout = 20 * time.Second
-)
 
-const (
-	baseProtocolVersion    = 5
-	baseProtocolLength     = uint64(16)
-	baseProtocolMaxMsgSize = 2 * 1024
-
-	snappyProtocolVersion = 5
-
-	pingInterval = 15 * time.Second
 	// Maximum number of concurrently dialing outbound connections.
 	maxActiveDialTasks = 16
 )
@@ -291,8 +278,8 @@ type Server struct {
 	addpeer       chan *conn
 	delpeer       chan peerDrop
 	loopWG        sync.WaitGroup // loop, listenLoop
-	//peerFeed      event.Feed
-	log log.Logger
+	peerFeed      event.Feed
+	log           log.Logger
 }
 
 func (srv *Server) startListening() error {
@@ -742,20 +729,20 @@ func (srv *Server) runPeer(p *Peer) {
 	}
 
 	// broadcast peer add
-	//srv.peerFeed.Send(&PeerEvent{
-	//	Type: PeerEventTypeAdd,
-	//	Peer: p.ID(),
-	//})
+	srv.peerFeed.Send(&PeerEvent{
+		Type: PeerEventTypeAdd,
+		Peer: p.ID(),
+	})
 
 	// run the protocol
 	remoteRequested, err := p.run()
 
 	// broadcast peer drop
-	//srv.peerFeed.Send(&PeerEvent{
-	//	Type:  PeerEventTypeDrop,
-	//	Peer:  p.ID(),
-	//	Error: err.Error(),
-	//})
+	srv.peerFeed.Send(&PeerEvent{
+		Type:  PeerEventTypeDrop,
+		Peer:  p.ID(),
+		Error: err.Error(),
+	})
 
 	// Note: run waits for existing peers to be sent on srv.delpeer
 	// before returning, so this send should not select on srv.quit.
@@ -921,6 +908,14 @@ type dialstate struct {
 
 	start     time.Time        // time when the dialer was first used
 	bootnodes []*discover.Node // default dials when there are no peers
+}
+
+type discoverTable interface {
+	Self() *discover.Node
+	Close()
+	Resolve(target discover.NodeID) *discover.Node
+	Lookup(target discover.NodeID) []*discover.Node
+	ReadRandomNodes([]*discover.Node) int
 }
 
 // the dial history remembers recent dials.
@@ -1118,6 +1113,14 @@ func (t *discoverTask) String() string {
 	}
 	return s
 }
+
+var (
+	errSelf             = errors.New("is self")
+	errAlreadyDialing   = errors.New("already dialing")
+	errAlreadyConnected = errors.New("already connected")
+	errRecentlyDialed   = errors.New("recently dialed")
+	errNotWhitelisted   = errors.New("not contained in netrestrict whitelist")
+)
 
 func (s *dialstate) checkDial(n *discover.Node, peers map[discover.NodeID]*Peer) error {
 	_, dialing := s.dialing[n.ID]

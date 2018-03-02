@@ -1,10 +1,6 @@
 package p2p
 
 import (
-	"github.com/atmchain/atmapp/common"
-	"github.com/atmchain/atmapp/log"
-	"github.com/atmchain/atmapp/rlp"
-	"github.com/atmchain/atmapp/p2p/discover"
 	"errors"
 	"fmt"
 	"io"
@@ -13,6 +9,22 @@ import (
 	"sort"
 	"sync"
 	"time"
+
+	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/event"
+	"github.com/atmchain/atmapp/log"
+	"github.com/atmchain/atmapp/p2p/discover"
+	"github.com/atmchain/atmapp/rlp"
+)
+
+const (
+	baseProtocolVersion    = 5
+	baseProtocolLength     = uint64(16)
+	baseProtocolMaxMsgSize = 2 * 1024
+
+	snappyProtocolVersion = 5
+
+	pingInterval = 15 * time.Second
 )
 
 const (
@@ -30,6 +42,11 @@ const (
 	errInvalidMsg
 )
 
+var errorToString = map[int]string{
+	errInvalidMsgCode: "invalid message code",
+	errInvalidMsg:     "invalid message",
+}
+
 type peerError struct {
 	code    int
 	message string
@@ -37,11 +54,6 @@ type peerError struct {
 
 func (self *peerError) Error() string {
 	return self.message
-}
-
-var errorToString = map[int]string{
-	errInvalidMsgCode: "invalid message code",
-	errInvalidMsg:     "invalid message",
 }
 
 func newPeerError(code int, format string, v ...interface{}) *peerError {
@@ -122,6 +134,50 @@ func discReasonForError(err error) DiscReason {
 	return DiscSubprotocolError
 }
 
+// protoHandshake is the RLP structure of the protocol handshake.
+type protoHandshake struct {
+	Version    uint64
+	Name       string
+	Caps       []Cap
+	ListenPort uint64
+	ID         discover.NodeID
+
+	// Ignore additional fields (for forward compatibility).
+	Rest []rlp.RawValue `rlp:"tail"`
+}
+
+// PeerEventType is the type of peer events emitted by a p2p.Server
+type PeerEventType string
+
+const (
+	// PeerEventTypeAdd is the type of event emitted when a peer is added
+	// to a p2p.Server
+	PeerEventTypeAdd PeerEventType = "add"
+
+	// PeerEventTypeDrop is the type of event emitted when a peer is
+	// dropped from a p2p.Server
+	PeerEventTypeDrop PeerEventType = "drop"
+
+	// PeerEventTypeMsgSend is the type of event emitted when a
+	// message is successfully sent to a peer
+	PeerEventTypeMsgSend PeerEventType = "msgsend"
+
+	// PeerEventTypeMsgRecv is the type of event emitted when a
+	// message is received from a peer
+	PeerEventTypeMsgRecv PeerEventType = "msgrecv"
+)
+
+// PeerEvent is an event emitted when peers are either added or dropped from
+// a p2p.Server or when a message is sent or received on a peer connection
+type PeerEvent struct {
+	Type     PeerEventType   `json:"type"`
+	Peer     discover.NodeID `json:"peer"`
+	Error    string          `json:"error,omitempty"`
+	Protocol string          `json:"protocol,omitempty"`
+	MsgCode  *uint64         `json:"msg_code,omitempty"`
+	MsgSize  *uint32         `json:"msg_size,omitempty"`
+}
+
 // Peer represents a connected remote node.
 type Peer struct {
 	rw      *conn
@@ -134,13 +190,33 @@ type Peer struct {
 	closed   chan struct{}
 	disc     chan DiscReason
 
-	// events receives message send / receive events if set
-	//events *event.Feed
+	//events receives message send / receive events if set
+	events *event.Feed
+}
+
+// NewPeer returns a peer for testing purposes.
+func NewPeer(id discover.NodeID, name string, caps []Cap) *Peer {
+	pipe, _ := net.Pipe()
+	conn := &conn{fd: pipe, transport: nil, id: id, caps: caps, name: name}
+	peer := newPeer(conn, nil)
+	close(peer.closed) // ensures Disconnect doesn't block
+	return peer
 }
 
 // ID returns the node's public key.
 func (p *Peer) ID() discover.NodeID {
 	return p.rw.id
+}
+
+// Caps returns the capabilities (supported subprotocols) of the remote peer.
+func (p *Peer) Caps() []Cap {
+	// TODO: maybe return copy
+	return p.rw.caps
+}
+
+// Name returns the node name that the remote node advertised.
+func (p *Peer) Name() string {
+	return p.rw.name
 }
 
 // RemoteAddr returns the remote address of the network connection.
@@ -160,6 +236,29 @@ func (p *Peer) Disconnect(reason DiscReason) {
 	case p.disc <- reason:
 	case <-p.closed:
 	}
+}
+
+// String implements fmt.Stringer.
+func (p *Peer) String() string {
+	return fmt.Sprintf("Peer %x %v", p.rw.id[:8], p.RemoteAddr())
+}
+
+func newPeer(conn *conn, protocols []Protocol) *Peer {
+	protomap := matchProtocols(protocols, conn.caps, conn)
+	p := &Peer{
+		rw:       conn,
+		running:  protomap,
+		created:  common.Now(),
+		disc:     make(chan DiscReason),
+		protoErr: make(chan error, len(protomap)+1), // protocols + pingLoop
+		closed:   make(chan struct{}),
+		log:      log.New("id", conn.id, "conn", conn.flags),
+	}
+	return p
+}
+
+func (p *Peer) Log() log.Logger {
+	return p.log
 }
 
 func (p *Peer) run() (remoteRequested bool, err error) {
@@ -275,39 +374,10 @@ func (p *Peer) handle(msg Msg) error {
 	return nil
 }
 
-func (p *Peer) Log() log.Logger {
-	return p.log
-}
-
-// Name returns the node name that the remote node advertised.
-func (p *Peer) Name() string {
-	return p.rw.name
-}
-
 // Discard reads any remaining payload data into a black hole.
 func (msg Msg) Discard() error {
 	_, err := io.Copy(ioutil.Discard, msg.Payload)
 	return err
-}
-
-// Caps returns the capabilities (supported subprotocols) of the remote peer.
-func (p *Peer) Caps() []Cap {
-	// TODO: maybe return copy
-	return p.rw.caps
-}
-
-func newPeer(conn *conn, protocols []Protocol) *Peer {
-	protomap := matchProtocols(protocols, conn.caps, conn)
-	p := &Peer{
-		rw:       conn,
-		running:  protomap,
-		created:  common.Now(),
-		disc:     make(chan DiscReason),
-		protoErr: make(chan error, len(protomap)+1), // protocols + pingLoop
-		closed:   make(chan struct{}),
-		log:      log.New("id", conn.id, "conn", conn.flags),
-	}
-	return p
 }
 
 // matchProtocols creates structures for matching named subprotocols.
@@ -405,6 +475,45 @@ func countMatchingProtocols(protocols []Protocol, caps []Cap) int {
 		}
 	}
 	return n
+}
+
+type protoRW struct {
+	Protocol
+	in     chan Msg        // receices read messages
+	closed <-chan struct{} // receives when peer is shutting down
+	wstart <-chan struct{} // receives when write may start
+	werr   chan<- error    // for write results
+	offset uint64
+	w      MsgWriter
+}
+
+func (rw *protoRW) WriteMsg(msg Msg) (err error) {
+	if msg.Code >= rw.Length {
+		return newPeerError(errInvalidMsgCode, "not handled")
+	}
+	msg.Code += rw.offset
+	select {
+	case <-rw.wstart:
+		err = rw.w.WriteMsg(msg)
+		// Report write status back to Peer.run. It will initiate
+		// shutdown if the error is non-nil and unblock the next write
+		// otherwise. The calling protocol code should exit for errors
+		// as well but we don't want to rely on that.
+		rw.werr <- err
+	case <-rw.closed:
+		err = fmt.Errorf("shutting down")
+	}
+	return err
+}
+
+func (rw *protoRW) ReadMsg() (Msg, error) {
+	select {
+	case msg := <-rw.in:
+		msg.Code -= rw.offset
+		return msg, nil
+	case <-rw.closed:
+		return Msg{}, io.EOF
+	}
 }
 
 // PeerInfo represents a short summary of the information known about a connected
