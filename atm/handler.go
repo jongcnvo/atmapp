@@ -77,7 +77,7 @@ type ProtocolManager struct {
 
 // NewProtocolManager returns a new ATMChain sub protocol manager. The ATMChain sub protocol manages peers capable
 // with the ATMChain network.
-func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, networkId uint64, mux *event.TypeMux, txpool txPool, engine consensus.Engine, blockchain *core.BlockChain, chaindb db.Database) (*ProtocolManager, error) {
+func NewProtocolManager(config *params.ChainConfig, networkId uint64, mux *event.TypeMux, txpool txPool, engine consensus.Engine, blockchain *core.BlockChain, chaindb db.Database) (*ProtocolManager, error) {
 	// Create the protocol manager with the base fields
 	manager := &ProtocolManager{
 		networkId:   networkId,
@@ -128,7 +128,7 @@ func NewProtocolManager(config *params.ChainConfig, mode downloader.SyncMode, ne
 		return nil, errIncompatibleConfig
 	}
 	// Construct the different synchronisation mechanisms
-	manager.downloader = downloader.New(0, chaindb, manager.eventMux, blockchain, manager.removePeer)
+	manager.downloader = downloader.New(chaindb, manager.eventMux, blockchain, manager.removePeer)
 
 	validator := func(header *types.Header) error {
 		return engine.VerifyHeader(blockchain, header, true)
@@ -300,12 +300,15 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			} else {
 				origin = pm.blockchain.GetHeaderByNumber(query.Origin.Number)
 			}
+			log.Debug("[Mar 3]", "origin", query.Origin.Number)
 			if origin == nil {
 				break
 			}
 			number := origin.Number.Uint64()
 			headers = append(headers, origin)
 			bytes += estHeaderRlpSize
+
+			log.Debug("[Mar 3]", "block", number)
 
 			// Advance to the next header of the query
 			switch {
@@ -361,14 +364,17 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// A batch of headers arrived to one of our previous requests
 		var headers []*types.Header
 		if err := msg.Decode(&headers); err != nil {
+			log.Info("BlockHeadersMsg decode error")
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
 		if len(headers) > 0 {
+			log.Info("BlockHeadersMsg header length", len(headers))
 			err := pm.downloader.DeliverHeaders(p.id, headers)
 			if err != nil {
 				log.Debug("Failed to deliver headers", "err", err)
 			}
 		}
+		log.Info("[Mar 3]BlockHeadersMsg header length is 0")
 
 	case msg.Code == GetBlockBodiesMsg:
 		// Decode the retrieval message

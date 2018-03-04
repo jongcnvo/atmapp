@@ -21,8 +21,7 @@ var (
 
 // queue represents hashes that are either need fetching or are being fetched
 type queue struct {
-	mode          SyncMode // Synchronisation mode to decide on the block parts to schedule for fetching
-	fastSyncPivot uint64   // Block number where the fast sync pivots into archive synchronisation mode
+	fastSyncPivot uint64 // Block number where the fast sync pivots into archive synchronisation mode
 
 	headerHead common.Hash // Hash of the last queued header to verify order
 
@@ -323,7 +322,7 @@ func (q *queue) Reset() {
 
 // Prepare configures the result cache to allow accepting and caching inbound
 // fetch results.
-func (q *queue) Prepare(offset uint64, mode SyncMode, pivot uint64, head *types.Header) {
+func (q *queue) Prepare(offset uint64, pivot uint64, head *types.Header) {
 	q.lock.Lock()
 	defer q.lock.Unlock()
 
@@ -332,7 +331,6 @@ func (q *queue) Prepare(offset uint64, mode SyncMode, pivot uint64, head *types.
 		q.resultOffset = offset
 	}
 	q.fastSyncPivot = pivot
-	q.mode = mode
 }
 
 // Close marks the end of the sync, unblocking WaitResults.

@@ -118,7 +118,7 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 	}
 	atm.txPool = core.NewTxPool(config.TxPool, atm.chainConfig, atm.blockchain)
 
-	if atm.protocolManager, err = NewProtocolManager(atm.chainConfig, 0, config.NetworkId, atm.eventMux, atm.txPool, atm.engine, atm.blockchain, chainDb); err != nil {
+	if atm.protocolManager, err = NewProtocolManager(atm.chainConfig, config.NetworkId, atm.eventMux, atm.txPool, atm.engine, atm.blockchain, chainDb); err != nil {
 		return nil, err
 	}
 
