@@ -357,6 +357,7 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				query.Origin.Number += query.Skip + 1
 			}
 		}
+		log.Debug("SendBlockHeaders", "len", len(headers))
 		return p.SendBlockHeaders(headers)
 
 	case msg.Code == BlockHeadersMsg:
@@ -367,14 +368,21 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			log.Info("BlockHeadersMsg decode error")
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
-		if len(headers) > 0 {
-			log.Info("BlockHeadersMsg header length", len(headers))
+		// Filter out any explicitly requested headers, deliver the rest to the downloader
+		filter := len(headers) == 1
+		if filter {
+			log.Info("Receive BlockHeadersMsg received 2")
+			// Irrelevant of the fork checks, send the header to the fetcher just in case
+			headers = pm.fetcher.FilterHeaders(p.id, headers, time.Now())
+		}
+		if len(headers) > 0 || !filter {
+			log.Info("Receive BlockHeadersMsg received 3")
 			err := pm.downloader.DeliverHeaders(p.id, headers)
 			if err != nil {
 				log.Debug("Failed to deliver headers", "err", err)
 			}
 		}
-		log.Info("[Mar 3]BlockHeadersMsg header length is 0")
+		log.Info("Receive BlockHeadersMsg received 4")
 
 	case msg.Code == GetBlockBodiesMsg:
 		// Decode the retrieval message

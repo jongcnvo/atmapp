@@ -214,6 +214,34 @@ func (f *Fetcher) Enqueue(peer string, block *types.Block) error {
 	}
 }
 
+// FilterHeaders extracts all the headers that were explicitly requested by the fetcher,
+// returning those that should be handled differently.
+func (f *Fetcher) FilterHeaders(peer string, headers []*types.Header, time time.Time) []*types.Header {
+	log.Trace("Filtering headers", "peer", peer, "headers", len(headers))
+
+	// Send the filter channel to the fetcher
+	filter := make(chan *headerFilterTask)
+
+	select {
+	case f.headerFilter <- filter:
+	case <-f.quit:
+		return nil
+	}
+	// Request the filtering of the header list
+	select {
+	case filter <- &headerFilterTask{peer: peer, headers: headers, time: time}:
+	case <-f.quit:
+		return nil
+	}
+	// Retrieve the headers remaining after filtering
+	select {
+	case task := <-filter:
+		return task.headers
+	case <-f.quit:
+		return nil
+	}
+}
+
 // Start boots up the announcement based synchroniser, accepting and processing
 // hash notifications and block fetches until termination requested.
 func (f *Fetcher) Start() {

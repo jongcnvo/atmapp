@@ -1,7 +1,6 @@
 package downloader
 
 import (
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"math"
@@ -496,29 +495,6 @@ func (d *Downloader) syncWithPeer(p *peerConnection, hash common.Hash, td *big.I
 	// Initiate the sync using a concurrent header and content retrieval algorithm
 	pivot := uint64(0)
 
-	// Calculate the new fast/slow sync pivot point
-	if d.fsPivotLock == nil {
-		pivotOffset, err := rand.Int(rand.Reader, big.NewInt(int64(fsPivotInterval)))
-		if err != nil {
-			panic(fmt.Sprintf("Failed to access crypto random source: %v", err))
-		}
-		if height > uint64(fsMinFullBlocks)+pivotOffset.Uint64() {
-			pivot = height - uint64(fsMinFullBlocks) - pivotOffset.Uint64()
-		}
-	} else {
-		// Pivot point locked in, use this and do not pick a new one!
-		pivot = d.fsPivotLock.Number.Uint64()
-	}
-	// If the point is below the origin, move origin back to ensure state download
-	if pivot < origin {
-		if pivot > 0 {
-			origin = pivot - 1
-		} else {
-			origin = 0
-		}
-	}
-	log.Debug("Fast syncing until pivot block", "pivot", pivot)
-
 	d.queue.Prepare(origin+1, pivot, latest)
 	if d.syncInitHook != nil {
 		d.syncInitHook(origin, height)
@@ -626,6 +602,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 	if count > limit {
 		count = limit
 	}
+	log.Info("Request header 1")
 	go p.peer.RequestHeadersByNumber(uint64(from), count, 15, false)
 
 	// Wait for the remote response to the head fetch
@@ -709,6 +686,7 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 		ttl := d.requestTTL()
 		timeout := time.After(ttl)
 
+		log.Info("Request header 2")
 		go p.peer.RequestHeadersByNumber(check, 1, 0, false)
 
 		// Wait until a reply arrives to this request
@@ -805,7 +783,8 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64) error {
 
 	log.Info("[Mar 3] Start timer")
 	// Create a timeout timer, and the associated header fetcher
-	skeleton := true            // Skeleton assembly phase or finishing up
+	skeleton := true // Skeleton assembly phase or finishing up
+	log.Debug("set skeleton as true")
 	request := time.Now()       // time of the last skeleton fetch request
 	timeout := time.NewTimer(0) // timer to dump a non-responsive active peer
 	<-timeout.C                 // timeout channel should be initially empty
@@ -821,9 +800,11 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64) error {
 
 		if skeleton {
 			p.log.Trace("Fetching skeleton headers", "count", MaxHeaderFetch, "from", from)
+			log.Info("Request header 3")
 			go p.peer.RequestHeadersByNumber(from+uint64(MaxHeaderFetch)-1, MaxSkeletonSize, MaxHeaderFetch-1, false)
 		} else {
 			p.log.Trace("Fetching full headers", "count", MaxHeaderFetch, "from", from)
+			log.Info("Request header 4")
 			go p.peer.RequestHeadersByNumber(from, MaxHeaderFetch, 0, false)
 		}
 	}
@@ -848,6 +829,7 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64) error {
 			// If the skeleton's finished, pull any remaining head headers directly from the origin
 			if packet.Items() == 0 && skeleton {
 				skeleton = false
+				log.Debug("set skeleton as false")
 				getHeaders(from)
 				continue
 			}
