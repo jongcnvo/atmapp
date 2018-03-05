@@ -5,6 +5,7 @@ import (
 	"math/big"
 
 	"github.com/atmchain/atmapp/accounts"
+	"github.com/atmchain/atmapp/atm/gasprice"
 	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/core"
 	"github.com/atmchain/atmapp/core/state"
@@ -18,7 +19,7 @@ import (
 // ATMApiBackend implements atmapi.Backend for full nodes
 type ATMApiBackend struct {
 	atm *ATM
-	//gpo *gasprice.Oracle
+	gpo *gasprice.Oracle
 }
 
 func (b *ATMApiBackend) ChainConfig() *params.ChainConfig {
@@ -109,4 +110,8 @@ func (b *ATMApiBackend) ChainDb() db.Database {
 
 func (b *ATMApiBackend) ProtocolVersion() int {
 	return b.atm.ATMVersion()
+}
+
+func (b *ATMApiBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
+	return b.gpo.SuggestPrice(ctx)
 }

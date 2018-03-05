@@ -8,6 +8,7 @@ import (
 	"sync/atomic"
 
 	"github.com/atmchain/atmapp/accounts"
+	"github.com/atmchain/atmapp/atm/gasprice"
 	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/consensus"
 	"github.com/atmchain/atmapp/consensus/clique"
@@ -125,12 +126,12 @@ func New(ctx *node.ServiceContext, config *Config) (*ATM, error) {
 	atm.miner = miner.New(atm, atm.chainConfig, atm.EventMux(), atm.engine)
 	atm.miner.SetExtra(makeExtraData(config.ExtraData))
 
-	atm.ApiBackend = &ATMApiBackend{atm}
+	atm.ApiBackend = &ATMApiBackend{atm, nil}
 	gpoParams := config.GPO
 	if gpoParams.Default == nil {
 		gpoParams.Default = config.GasPrice
 	}
-	//eth.ApiBackend.gpo = gasprice.NewOracle(eth.ApiBackend, gpoParams)
+	atm.ApiBackend.gpo = gasprice.NewOracle(atm.ApiBackend, gpoParams)
 
 	return atm, nil
 }
@@ -188,12 +189,13 @@ func (s *ATM) APIs() []rpc.API {
 			Version:   "1.0",
 			Service:   NewPublicATMAPI(s),
 			Public:    true,
-		}, /*{
+		},
+		{
 			Namespace: "atm",
 			Version:   "1.0",
 			Service:   NewPublicMinerAPI(s),
 			Public:    true,
-		}, {
+		}, /*{
 			Namespace: "atm",
 			Version:   "1.0",
 			Service:   downloader.NewPublicDownloaderAPI(s.protocolManager.downloader, s.eventMux),
@@ -333,3 +335,5 @@ func (s *ATM) TxPool() *core.TxPool              { return s.txPool }
 func (s *ATM) AccountManager() *accounts.Manager { return s.accountManager }
 func (s *ATM) NetVersion() uint64                { return s.networkId }
 func (s *ATM) ATMVersion() int                   { return int(s.protocolManager.SubProtocols[0].Version) }
+func (s *ATM) IsMining() bool                    { return s.miner.Mining() }
+func (s *ATM) Miner() *miner.Miner               { return s.miner }

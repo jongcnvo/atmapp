@@ -3,6 +3,7 @@ package atm
 import (
 	"math/big"
 
+	"github.com/atmchain/atmapp/atm/gasprice"
 	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/core"
 	"github.com/atmchain/atmapp/params"
@@ -30,7 +31,7 @@ type Config struct {
 	TxPool core.TxPoolConfig
 
 	// Gas Price Oracle options
-	GPO GasConfig
+	GPO gasprice.Config
 
 	// Enables tracking of SHA3 preimages in the VM
 	EnablePreimageRecording bool
@@ -39,16 +40,14 @@ type Config struct {
 	DocRoot string `toml:"-"`
 }
 
-type GasConfig struct {
-	Blocks     int
-	Percentile int
-	Default    *big.Int `toml:",omitempty"`
-}
-
 // DefaultConfig contains default settings for use on the main net.
 var DefaultConfig = Config{
 	NetworkId:     1,
 	DatabaseCache: 128,
 	GasPrice:      big.NewInt(18 * params.Shannon),
 	TxPool:        core.DefaultTxPoolConfig,
+	GPO: gasprice.Config{
+		Blocks:     10,
+		Percentile: 50,
+	},
 }

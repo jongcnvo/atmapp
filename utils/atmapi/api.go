@@ -28,6 +28,11 @@ func (s *PublicATMAPI) ProtocolVersion() uint {
 	return uint(s.b.ProtocolVersion())
 }
 
+// GasPrice returns a suggestion for a gas price.
+func (s *PublicATMAPI) GasPrice(ctx context.Context) (*big.Int, error) {
+	return s.b.SuggestPrice(ctx)
+}
+
 // PublicBlockChainAPI provides an API to access the ATMChain blockchain.
 // It offers only methods that operate on public data that is freely available to anyone.
 type PublicBlockChainAPI struct {

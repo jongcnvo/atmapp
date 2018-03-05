@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/miner"
 )
 
 // PublicATMPI provides an API to access ATMChain full node-related
@@ -23,6 +24,11 @@ func NewPublicATMAPI(e *ATM) *PublicATMAPI {
 // ATMrbase is the address that mining rewards will be send to
 func (api *PublicATMAPI) ATMbase() (common.Address, error) {
 	return api.e.ATMbase()
+}
+
+// Coinbase is the address that mining rewards will be send to (alias for Etherbase)
+func (api *PublicATMAPI) Coinbase() (common.Address, error) {
+	return api.ATMbase()
 }
 
 // PrivateAdminAPI is the collection of ATMChain full node-related APIs
@@ -57,4 +63,24 @@ func (api *PrivateAdminAPI) ExportChain(file string) (bool, error) {
 		return false, err
 	}
 	return true, nil
+}
+
+// PublicMinerAPI provides an API to control the miner.
+// It offers only methods that operate on data that pose no security risk when it is publicly accessible.
+type PublicMinerAPI struct {
+	e     *ATM
+	agent *miner.RemoteAgent
+}
+
+// NewPublicMinerAPI create a new PublicMinerAPI instance.
+func NewPublicMinerAPI(e *ATM) *PublicMinerAPI {
+	agent := miner.NewRemoteAgent(e.BlockChain(), e.Engine())
+	e.Miner().Register(agent)
+
+	return &PublicMinerAPI{e, agent}
+}
+
+// Mining returns an indication if this node is currently mining.
+func (api *PublicMinerAPI) Mining() bool {
+	return api.e.IsMining()
 }

@@ -19,7 +19,7 @@ type Backend interface {
 	// General ATMChain API
 	//Downloader() *downloader.Downloader
 	ProtocolVersion() int
-	//SuggestPrice(ctx context.Context) (*big.Int, error)
+	SuggestPrice(ctx context.Context) (*big.Int, error)
 	ChainDb() db.Database
 	//EventMux() *event.TypeMux
 	AccountManager() *accounts.Manager

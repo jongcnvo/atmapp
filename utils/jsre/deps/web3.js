@@ -5463,25 +5463,20 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
         return [
             new Property({
                 name: 'coinbase',
-                getter: 'eth_coinbase'
+                getter: 'atm_coinbase'
             }),
             new Property({
                 name: 'mining',
-                getter: 'eth_mining'
-            }),
-            new Property({
-                name: 'hashrate',
-                getter: 'eth_hashrate',
-                outputFormatter: utils.toDecimal
+                getter: 'atm_mining'
             }),
             new Property({
                 name: 'syncing',
-                getter: 'eth_syncing',
+                getter: 'atm_syncing',
                 outputFormatter: formatters.outputSyncingFormatter
             }),
             new Property({
                 name: 'gasPrice',
-                getter: 'eth_gasPrice',
+                getter: 'atm_gasPrice',
                 outputFormatter: formatters.outputBigNumberFormatter
             }),
             new Property({
