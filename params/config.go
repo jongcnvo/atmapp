@@ -35,7 +35,7 @@ var (
 	MainnetChainConfig = &ChainConfig{
 		ChainId: big.NewInt(1),
 		Clique: &CliqueConfig{
-			Period: 1,
+			Period: 15,
 			Epoch:  30000,
 		},
 	}

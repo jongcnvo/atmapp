@@ -752,3 +752,8 @@ func (n *Node) Service(service interface{}) error {
 func (n *Node) DataDir() string {
 	return n.config.DataDir
 }
+
+// ResolvePath returns the absolute path of a resource in the instance directory.
+func (n *Node) ResolvePath(x string) string {
+	return n.config.resolvePath(x)
+}

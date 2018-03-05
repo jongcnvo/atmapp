@@ -115,3 +115,7 @@ func (b *ATMApiBackend) ProtocolVersion() int {
 func (b *ATMApiBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
 	return b.gpo.SuggestPrice(ctx)
 }
+
+func (b *ATMApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error) {
+	return b.atm.txPool.State().GetNonce(addr), nil
+}

@@ -5269,7 +5269,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     var methods = function () {
         var getBalance = new Method({
             name: 'getBalance',
-            call: 'eth_getBalance',
+            call: 'atm_getBalance',
             params: 2,
             inputFormatter: [formatters.inputAddressFormatter, formatters.inputDefaultBlockNumberFormatter],
             outputFormatter: formatters.outputBigNumberFormatter
@@ -5330,7 +5330,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var getTransaction = new Method({
             name: 'getTransaction',
-            call: 'eth_getTransactionByHash',
+            call: 'atm_getTransactionByHash',
             params: 1,
             outputFormatter: formatters.outputTransactionFormatter
         });
@@ -5345,14 +5345,14 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var getTransactionReceipt = new Method({
             name: 'getTransactionReceipt',
-            call: 'eth_getTransactionReceipt',
+            call: 'atm_getTransactionReceipt',
             params: 1,
             outputFormatter: formatters.outputTransactionReceiptFormatter
         });
     
         var getTransactionCount = new Method({
             name: 'getTransactionCount',
-            call: 'eth_getTransactionCount',
+            call: 'atm_getTransactionCount',
             params: 2,
             inputFormatter: [null, formatters.inputDefaultBlockNumberFormatter],
             outputFormatter: utils.toDecimal
@@ -5360,28 +5360,28 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var sendRawTransaction = new Method({
             name: 'sendRawTransaction',
-            call: 'eth_sendRawTransaction',
+            call: 'atm_sendRawTransaction',
             params: 1,
             inputFormatter: [null]
         });
     
         var sendTransaction = new Method({
             name: 'sendTransaction',
-            call: 'eth_sendTransaction',
+            call: 'atm_sendTransaction',
             params: 1,
             inputFormatter: [formatters.inputTransactionFormatter]
         });
     
         var signTransaction = new Method({
             name: 'signTransaction',
-            call: 'eth_signTransaction',
+            call: 'atm_signTransaction',
             params: 1,
             inputFormatter: [formatters.inputTransactionFormatter]
         });
     
         var sign = new Method({
             name: 'sign',
-            call: 'eth_sign',
+            call: 'atm_sign',
             params: 2,
             inputFormatter: [formatters.inputAddressFormatter, null]
         });
