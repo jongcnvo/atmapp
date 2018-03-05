@@ -546,7 +546,6 @@ func (d *Downloader) fetchHeight(p *peerConnection) (*types.Header, error) {
 			return nil, errCancelBlockFetch
 
 		case packet := <-d.headerCh:
-			log.Debug("Mar 3] Receive headerCh in fetch height")
 			// Discard anything not from the origin peer
 			if packet.PeerId() != p.id {
 				log.Debug("Received headers from incorrect peer", "peer", packet.PeerId())
@@ -602,7 +601,6 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 	if count > limit {
 		count = limit
 	}
-	log.Info("Request header 1")
 	go p.peer.RequestHeadersByNumber(uint64(from), count, 15, false)
 
 	// Wait for the remote response to the head fetch
@@ -617,7 +615,6 @@ func (d *Downloader) findAncestor(p *peerConnection, height uint64) (uint64, err
 			return 0, errCancelHeaderFetch
 
 		case packet := <-d.headerCh:
-			log.Debug("Mar 3] Receive headerCh in find ancestor")
 			// Discard anything not from the origin peer
 			if packet.PeerId() != p.id {
 				log.Debug("Received headers from incorrect peer", "peer", packet.PeerId())
@@ -781,16 +778,13 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64) error {
 	p.log.Debug("Directing header downloads", "origin", from)
 	defer p.log.Debug("Header download terminated")
 
-	log.Info("[Mar 3] Start timer")
 	// Create a timeout timer, and the associated header fetcher
-	skeleton := true // Skeleton assembly phase or finishing up
-	log.Debug("set skeleton as true")
+	skeleton := true            // Skeleton assembly phase or finishing up
 	request := time.Now()       // time of the last skeleton fetch request
 	timeout := time.NewTimer(0) // timer to dump a non-responsive active peer
 	<-timeout.C                 // timeout channel should be initially empty
 	defer timeout.Stop()
 
-	log.Info("[Mar 3] Get header")
 	var ttl time.Duration
 	getHeaders := func(from uint64) {
 		request = time.Now()
@@ -800,11 +794,9 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64) error {
 
 		if skeleton {
 			p.log.Trace("Fetching skeleton headers", "count", MaxHeaderFetch, "from", from)
-			log.Info("Request header 3")
 			go p.peer.RequestHeadersByNumber(from+uint64(MaxHeaderFetch)-1, MaxSkeletonSize, MaxHeaderFetch-1, false)
 		} else {
 			p.log.Trace("Fetching full headers", "count", MaxHeaderFetch, "from", from)
-			log.Info("Request header 4")
 			go p.peer.RequestHeadersByNumber(from, MaxHeaderFetch, 0, false)
 		}
 	}
@@ -817,7 +809,6 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64) error {
 			return errCancelHeaderFetch
 
 		case packet := <-d.headerCh:
-			log.Debug("Mar 3] Receive headerCh in fetch headers")
 			// Make sure the active peer is giving us the skeleton headers
 			if packet.PeerId() != p.id {
 				log.Debug("Received skeleton from incorrect peer", "peer", packet.PeerId())
@@ -829,7 +820,6 @@ func (d *Downloader) fetchHeaders(p *peerConnection, from uint64) error {
 			// If the skeleton's finished, pull any remaining head headers directly from the origin
 			if packet.Items() == 0 && skeleton {
 				skeleton = false
-				log.Debug("set skeleton as false")
 				getHeaders(from)
 				continue
 			}

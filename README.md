@@ -54,3 +54,5 @@ GLOBAL OPTIONS:
   --mine                        Enable mining
   
   --port value                  Network listening port (default: 30303)
+
+  --nodiscover                  Disables the peer discovery mechanism (manual peer addition)

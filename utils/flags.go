@@ -163,6 +163,10 @@ func MakePasswordList(ctx *cli.Context) []string {
 
 func SetP2PConfig(ctx *cli.Context, cfg *p2p.Config) {
 	setListenAddress(ctx, cfg)
+
+	if ctx.GlobalIsSet(NoDiscoverFlag.Name) {
+		cfg.NoDiscovery = true
+	}
 }
 
 // MakeAddress converts an account specified directly as a hex encoded string or

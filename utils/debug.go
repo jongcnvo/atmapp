@@ -10,6 +10,19 @@ import (
 	"unsafe"
 )
 
+var (
+	verbosityFlag = cli.IntFlag{
+		Name:  "verbosity",
+		Usage: "Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail",
+		Value: 3,
+	}
+)
+
+// Flags holds all command-line flags required for debugging.
+var Flags = []cli.Flag{
+	verbosityFlag,
+}
+
 type Termios syscall.Termios
 
 const ioctlReadTermios = syscall.TIOCGETA
@@ -37,7 +50,7 @@ func init() {
 func Setup(ctx *cli.Context) error {
 	// logging
 	//log.PrintOrigins(ctx.GlobalBool(debugFlag.Name))
-	glogger.Verbosity(log.Lvl(4))
+	glogger.Verbosity(log.Lvl(ctx.GlobalInt(verbosityFlag.Name)))
 	//glogger.Vmodule(ctx.GlobalString(vmoduleFlag.Name))
 	//glogger.BacktraceAt(ctx.GlobalString(backtraceAtFlag.Name))
 	log.Root().SetHandler(glogger)

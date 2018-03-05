@@ -278,7 +278,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	// Block header query, collect the requested headers and reply
 	case msg.Code == GetBlockHeadersMsg:
-		log.Info("GetBlockHeadersMsg received")
 		// Decode the complex header query
 		var query getBlockHeadersData
 		if err := msg.Decode(&query); err != nil {
@@ -300,15 +299,12 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 			} else {
 				origin = pm.blockchain.GetHeaderByNumber(query.Origin.Number)
 			}
-			log.Debug("[Mar 3]", "origin", query.Origin.Number)
 			if origin == nil {
 				break
 			}
 			number := origin.Number.Uint64()
 			headers = append(headers, origin)
 			bytes += estHeaderRlpSize
-
-			log.Debug("[Mar 3]", "block", number)
 
 			// Advance to the next header of the query
 			switch {
@@ -357,11 +353,9 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 				query.Origin.Number += query.Skip + 1
 			}
 		}
-		log.Debug("SendBlockHeaders", "len", len(headers))
 		return p.SendBlockHeaders(headers)
 
 	case msg.Code == BlockHeadersMsg:
-		log.Info("Receive BlockHeadersMsg received")
 		// A batch of headers arrived to one of our previous requests
 		var headers []*types.Header
 		if err := msg.Decode(&headers); err != nil {
@@ -371,18 +365,15 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		// Filter out any explicitly requested headers, deliver the rest to the downloader
 		filter := len(headers) == 1
 		if filter {
-			log.Info("Receive BlockHeadersMsg received 2")
 			// Irrelevant of the fork checks, send the header to the fetcher just in case
 			headers = pm.fetcher.FilterHeaders(p.id, headers, time.Now())
 		}
 		if len(headers) > 0 || !filter {
-			log.Info("Receive BlockHeadersMsg received 3")
 			err := pm.downloader.DeliverHeaders(p.id, headers)
 			if err != nil {
 				log.Debug("Failed to deliver headers", "err", err)
 			}
 		}
-		log.Info("Receive BlockHeadersMsg received 4")
 
 	case msg.Code == GetBlockBodiesMsg:
 		// Decode the retrieval message
