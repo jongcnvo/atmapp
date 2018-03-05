@@ -362,8 +362,6 @@ func (c *Clique) Seal(chain consensus.ChainReader, block *types.Block, stop <-ch
 		delay += time.Duration(rand.Int63n(int64(wiggle)))
 
 		log.Trace("Out-of-turn signing requested", "wiggle", common.PrettyDuration(wiggle))
-	} else {
-		log.Warn("In turn to create block")
 	}
 	log.Trace("Waiting for slot to sign and propagate", "delay", common.PrettyDuration(delay))
 

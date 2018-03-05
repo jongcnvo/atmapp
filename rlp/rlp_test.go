@@ -2,7 +2,9 @@ package rlp
 
 import (
 	"bytes"
+	"fmt"
 	"testing"
+	"time"
 )
 
 func TestCodec(t *testing.T) {
@@ -159,6 +161,31 @@ func TestCodec(t *testing.T) {
 	for i, r := range resArray {
 		if r != b[i] {
 			t.Errorf("Decode want 0x%x, but get 0x%x", b[i], r)
+		}
+	}
+}
+
+type Msg struct {
+	Code       uint64
+	Size       uint32 // size of the paylod
+	ReceivedAt time.Time
+}
+
+func TestTimeCodec(t *testing.T) {
+	m := Msg{Code: 1, Size: 2, ReceivedAt: time.Now()}
+	o, err := EncodeToBytes(m)
+	if err != nil {
+		t.Errorf("Encode timer err")
+	} else {
+		t.Errorf("Encode timer ok 1")
+		//o, err := ioutil.ReadAll(r)
+		if err == nil {
+			t.Errorf("Encode timer ok 2")
+			fmt.Printf("%d\n", len(o))
+
+			var m1 Msg
+			Decode(bytes.NewReader(o), &m1)
+			fmt.Printf("time 2", m1.ReceivedAt)
 		}
 	}
 }

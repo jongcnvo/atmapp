@@ -56,3 +56,5 @@ GLOBAL OPTIONS:
   --port value                  Network listening port (default: 30303)
 
   --nodiscover                  Disables the peer discovery mechanism (manual peer addition)
+
+  --verbosity value             Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail (default: 3)

@@ -153,6 +153,27 @@ func CopyHeader(h *Header) *Header {
 	return &cpy
 }
 
+// DecodeRLP decodes the Ethereum
+func (b *Block) DecodeRLP(s *rlp.Stream) error {
+	var eb extblock
+	_, size, _ := s.Kind()
+	if err := s.Decode(&eb); err != nil {
+		return err
+	}
+	b.header, b.uncles, b.transactions = eb.Header, eb.Uncles, eb.Txs
+	b.size.Store(common.StorageSize(rlp.ListSize(size)))
+	return nil
+}
+
+// EncodeRLP serializes b into the Ethereum RLP block format.
+func (b *Block) EncodeRLP(w io.Writer) error {
+	return rlp.Encode(w, extblock{
+		Header: b.header,
+		Txs:    b.transactions,
+		Uncles: b.uncles,
+	})
+}
+
 type DerivableList interface {
 	Len() int
 	GetRlp(i int) []byte
@@ -190,6 +211,7 @@ func (b *Block) Hash() common.Hash {
 }
 
 func (b *Block) ParentHash() common.Hash { return b.header.ParentHash }
+func (b *Block) UncleHash() common.Hash  { return b.header.UncleHash }
 func (b *Block) GasUsed() uint64         { return b.header.GasUsed }
 func (b *Block) Root() common.Hash       { return b.header.Root }
 func (b *Block) Difficulty() *big.Int    { return new(big.Int).Set(b.header.Difficulty) }
@@ -271,13 +293,4 @@ type extblock struct {
 	Header *Header
 	Txs    []*Transaction
 	Uncles []*Header
-}
-
-// EncodeRLP serializes b into the Ethereum RLP block format.
-func (b *Block) EncodeRLP(w io.Writer) error {
-	return rlp.Encode(w, extblock{
-		Header: b.header,
-		Txs:    b.transactions,
-		Uncles: b.uncles,
-	})
 }

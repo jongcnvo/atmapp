@@ -445,6 +445,7 @@ func (f *Fetcher) loop() {
 
 							block := types.NewBlockWithHeader(header)
 							block.ReceivedAt = task.time
+							log.Info("Receive at 1", "time", task.time)
 
 							complete = append(complete, block)
 							f.completing[hash] = announce
@@ -512,6 +513,7 @@ func (f *Fetcher) loop() {
 							if f.getBlock(hash) == nil {
 								block := types.NewBlockWithHeader(announce.header).WithBody(task.transactions[i], task.uncles[i])
 								block.ReceivedAt = task.time
+								log.Info("Receive at 2", "time", task.time)
 
 								blocks = append(blocks, block)
 							} else {

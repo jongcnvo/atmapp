@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"errors"
 	"github.com/atmchain/atmapp/rlp"
+	"io"
 	"math/big"
 	"sync/atomic"
 
@@ -141,6 +142,22 @@ func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, e
 	cpy := &Transaction{data: tx.data}
 	cpy.data.R, cpy.data.S, cpy.data.V = r, s, v
 	return cpy, nil
+}
+
+// EncodeRLP implements rlp.Encoder
+func (tx *Transaction) EncodeRLP(w io.Writer) error {
+	return rlp.Encode(w, &tx.data)
+}
+
+// DecodeRLP implements rlp.Decoder
+func (tx *Transaction) DecodeRLP(s *rlp.Stream) error {
+	_, size, _ := s.Kind()
+	err := s.Decode(&tx.data)
+	if err == nil {
+		tx.size.Store(common.StorageSize(rlp.ListSize(size)))
+	}
+
+	return err
 }
 
 // Message is a fully derived transaction and implements core.Message

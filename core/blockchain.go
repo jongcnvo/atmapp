@@ -786,7 +786,7 @@ func (bc *BlockChain) insertChain(chain types.Blocks) (int, []interface{}, []*ty
 		}
 		stats.processed++
 		stats.usedGas += usedGas
-		//stats.report(chain, i)
+		stats.report(chain, i)
 	}
 	// Append a single chain head event if we've progressed the chain
 	if lastCanon != nil && bc.LastBlockHash() == lastCanon.Hash() {
@@ -823,6 +823,48 @@ type insertStats struct {
 	usedGas                    uint64
 	lastIndex                  int
 	startTime                  common.AbsTime
+}
+
+// statsReportLimit is the time limit during import after which we always print
+// out progress. This avoids the user wondering what's going on.
+const statsReportLimit = 8 * time.Second
+
+// report prints statistics if some number of blocks have been processed
+// or more than a few seconds have passed since the last message.
+func (st *insertStats) report(chain []*types.Block, index int) {
+	// Fetch the timings for the batch
+	var (
+		now     = common.Now()
+		elapsed = time.Duration(now) - time.Duration(st.startTime)
+	)
+	// If we're at the last block of the batch or report period reached, log
+	if index == len(chain)-1 || elapsed >= statsReportLimit {
+		var (
+			end = chain[index]
+			txs = countTransactions(chain[st.lastIndex : index+1])
+		)
+		context := []interface{}{
+			"blocks", st.processed, "txs", txs, "mgas", float64(st.usedGas) / 1000000,
+			"elapsed", common.PrettyDuration(elapsed), "mgasps", float64(st.usedGas) * 1000 / float64(elapsed),
+			"number", end.Number(), "hash", end.Hash(),
+		}
+		if st.queued > 0 {
+			context = append(context, []interface{}{"queued", st.queued}...)
+		}
+		if st.ignored > 0 {
+			context = append(context, []interface{}{"ignored", st.ignored}...)
+		}
+		log.Info("Imported new chain segment", context...)
+
+		*st = insertStats{startTime: now, lastIndex: index + 1}
+	}
+}
+
+func countTransactions(chain []*types.Block) (c int) {
+	for _, b := range chain {
+		c += len(b.Transactions())
+	}
+	return c
 }
 
 // addBadBlock adds a bad block to the bad-block LRU cache
