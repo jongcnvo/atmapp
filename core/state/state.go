@@ -3,6 +3,12 @@ package state
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"math/big"
+	"sort"
+	"sync"
+
+	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/core/trie"
 	"github.com/atmchain/atmapp/core/types"
 	"github.com/atmchain/atmapp/crypto"
@@ -10,11 +16,6 @@ import (
 	"github.com/atmchain/atmapp/log"
 	"github.com/atmchain/atmapp/rlp"
 	lru "github.com/hashicorp/golang-lru"
-	"math/big"
-	"sort"
-	"sync"
-
-	"github.com/atmchain/atmapp/common"
 )
 
 var emptyCodeHash = crypto.Keccak256(nil)
@@ -405,6 +406,7 @@ func (s *StateDB) CommitTo(dbw trie.DatabaseWriter, deleteEmptyObjects bool) (ro
 	}
 	// Write trie changes.
 	root, err = s.trie.CommitTo(dbw)
+
 	log.Debug("Trie cache stats after commit", "misses", trie.CacheMisses(), "unloads", trie.CacheUnloads())
 	return root, err
 }
@@ -589,6 +591,11 @@ func newObject(db *StateDB, address common.Address, data Account, onDirty func(a
 		dirtyStorage:  make(Storage),
 		onDirty:       onDirty,
 	}
+}
+
+// EncodeRLP implements rlp.Encoder.
+func (c *stateObject) EncodeRLP(w io.Writer) error {
+	return rlp.Encode(w, c.data)
 }
 
 // Returns the address of the contract/account

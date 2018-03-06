@@ -4,7 +4,7 @@
 
 // +build amd64,!appengine,!gccgo
 
-package crypto
+package sha3
 
 // This function is implemented in keccakf_amd64.s.
 

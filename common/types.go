@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/atmchain/atmapp/common/hexutil"
+	"github.com/atmchain/atmapp/crypto/sha3"
 )
 
 var (
@@ -176,7 +177,7 @@ func (a *Address) UnmarshalText(input []byte) error {
 }
 
 // Hex returns an EIP55-compliant hex string representation of the address.
-/*func (a Address) Hex() string {
+func (a Address) Hex() string {
 	unchecksummed := hex.EncodeToString(a[:])
 	sha := sha3.NewKeccak256()
 	sha.Write([]byte(unchecksummed))
@@ -195,12 +196,12 @@ func (a *Address) UnmarshalText(input []byte) error {
 		}
 	}
 	return "0x" + string(result)
-}*/
+}
 
 // String implements the stringer interface and is used also by the logger.
-/*func (a Address) String() string {
+func (a Address) String() string {
 	return a.Hex()
-}*/
+}
 
 // EncodeNonce converts the given integer to a block nonce.
 func EncodeNonce(i uint64) BlockNonce {

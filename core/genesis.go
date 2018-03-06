@@ -58,12 +58,14 @@ func (g *Genesis) ToBlock() (*types.Block, *state.StateDB) {
 	statedb, _ := state.New(common.Hash{}, state.NewDatabase(db))
 	for addr, account := range g.Alloc {
 		statedb.AddBalance(addr, account.Balance)
+		statedb.GetBalance(addr)
 		statedb.SetCode(addr, account.Code)
 		statedb.SetNonce(addr, account.Nonce)
 		for key, value := range account.Storage {
 			statedb.SetState(addr, key, value)
 		}
 	}
+	statedb.GetBalance(common.HexToAddress("7fb8994d4c97257efc888cb70eb2a0e93c9ad20e"))
 	root := statedb.IntermediateRoot(false)
 	head := &types.Header{
 		Number:     new(big.Int).SetUint64(g.Number),
@@ -84,6 +86,7 @@ func (g *Genesis) ToBlock() (*types.Block, *state.StateDB) {
 	if g.Difficulty == nil {
 		head.Difficulty = params.GenesisDifficulty
 	}
+	statedb.GetBalance(common.HexToAddress("7fb8994d4c97257efc888cb70eb2a0e93c9ad20e"))
 	return types.NewBlock(head, nil, nil, nil), statedb
 }
 
@@ -91,6 +94,7 @@ func (g *Genesis) ToBlock() (*types.Block, *state.StateDB) {
 // The block is committed as the canonical head block.
 func (g *Genesis) Commit(db db.Database) (*types.Block, error) {
 	block, statedb := g.ToBlock()
+	log.Info("Write genesis 1")
 	if block.Number().Sign() != 0 {
 		return nil, fmt.Errorf("can't commit genesis block with number > 0")
 	}
@@ -164,6 +168,7 @@ func SetupGenesisBlock(db db.Database, genesis *Genesis) (*params.ChainConfig, c
 	// Check whether the genesis block is already written.
 	if genesis != nil {
 		block, _ := genesis.ToBlock()
+		log.Info("Write genesis 2")
 		hash := block.Hash()
 		if hash != stored {
 			return genesis.Config, block.Hash(), &GenesisMismatchError{stored, hash}
@@ -209,7 +214,7 @@ func DefaultGenesisBlock() *Genesis {
 		GasLimit:   4700000,
 		Difficulty: big.NewInt(1),
 		ExtraData:  common.MustDecode("0x00000000000000000000000000000000000000000000000000000000000000007fb8994d4c97257efc888cb70eb2a0e93c9ad20e0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
-		Alloc:      GenesisAlloc{common.HexToAddress("0x7fb8994d4c97257efc888cb70eb2a0e93c9ad20e"): {Balance: big.NewInt(100)}},
+		Alloc:      GenesisAlloc{common.HexToAddress("7fb8994d4c97257efc888cb70eb2a0e93c9ad20e"): {Balance: big.NewInt(100)}},
 	}
 }
 

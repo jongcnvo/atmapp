@@ -9,7 +9,7 @@ import (
 	"sync"
 
 	"github.com/atmchain/atmapp/common"
-	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/crypto/sha3"
 	"github.com/atmchain/atmapp/log"
 	"github.com/atmchain/atmapp/rlp"
 	"github.com/rcrowley/go-metrics"
@@ -25,7 +25,7 @@ var (
 )
 
 func init() {
-	crypto.NewKeccak256().Sum(emptyState[:0])
+	sha3.NewKeccak256().Sum(emptyState[:0])
 }
 
 type (
@@ -874,7 +874,7 @@ type calculator struct {
 // calculatorPool is a set of temporary calculators that may be individually saved and retrieved.
 var calculatorPool = sync.Pool{
 	New: func() interface{} {
-		return &calculator{buffer: new(bytes.Buffer), sha: crypto.NewKeccak256()}
+		return &calculator{buffer: new(bytes.Buffer), sha: sha3.NewKeccak256()}
 	},
 }
 

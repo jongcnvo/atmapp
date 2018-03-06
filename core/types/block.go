@@ -10,7 +10,7 @@ import (
 
 	"github.com/atmchain/atmapp/common"
 	"github.com/atmchain/atmapp/core/trie"
-	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/crypto/sha3"
 	"github.com/atmchain/atmapp/rlp"
 )
 
@@ -52,7 +52,7 @@ func (h *Header) Hash() common.Hash {
 }
 
 func rlpHash(x interface{}) (h common.Hash) {
-	hw := crypto.NewKeccak256()
+	hw := sha3.NewKeccak256()
 	rlp.Encode(hw, x)
 	hw.Sum(h[:0])
 	return h

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"math/big"
 	"sync"
@@ -516,8 +515,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 
 	case msg.Code == NewBlockHashesMsg:
 		var announces newBlockHashesData
-		o, _ := ioutil.ReadAll(msg.Payload)
-		fmt.Printf("Message:0x%x", o)
 		if err := msg.Decode(&announces); err != nil {
 			return errResp(ErrDecode, "%v: %v", msg, err)
 		}

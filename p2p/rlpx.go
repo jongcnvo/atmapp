@@ -22,6 +22,7 @@ import (
 	"github.com/atmchain/atmapp/crypto"
 	"github.com/atmchain/atmapp/crypto/ecies"
 	"github.com/atmchain/atmapp/crypto/secp256k1"
+	"github.com/atmchain/atmapp/crypto/sha3"
 	"github.com/atmchain/atmapp/p2p/discover"
 	"github.com/atmchain/atmapp/rlp"
 	"github.com/golang/snappy"
@@ -232,10 +233,10 @@ func (h *encHandshake) secrets(auth, authResp []byte) (secrets, error) {
 	}
 
 	// setup sha3 instances for the MACs
-	mac1 := crypto.NewKeccak256()
+	mac1 := sha3.NewKeccak256()
 	mac1.Write(xor(s.MAC, h.respNonce))
 	mac1.Write(auth)
-	mac2 := crypto.NewKeccak256()
+	mac2 := sha3.NewKeccak256()
 	mac2.Write(xor(s.MAC, h.initNonce))
 	mac2.Write(authResp)
 	if h.initiator {

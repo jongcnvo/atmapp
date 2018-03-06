@@ -3,6 +3,7 @@ package rlp
 import (
 	"bytes"
 	"fmt"
+	"math/big"
 	"testing"
 	"time"
 )
@@ -188,4 +189,19 @@ func TestTimeCodec(t *testing.T) {
 			fmt.Printf("time 2", m1.ReceivedAt)
 		}
 	}
+}
+
+func TestBigCodec(t *testing.T) {
+	var b big.Int
+	o, err := EncodeToBytes(big.NewInt(100))
+	if err != nil {
+		t.Errorf("Encode big number err")
+	}
+	fmt.Printf("0x%x\n", o)
+
+	err = DecodeBytes(o, &b)
+	if err != nil {
+		t.Error(err)
+	}
+	fmt.Printf(b.String())
 }
