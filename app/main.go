@@ -93,6 +93,7 @@ func init() {
 	app.Commands = []cli.Command{
 		consoleCommand,
 		removedbCommand,
+		accountCommand,
 	}
 	sort.Sort(cli.CommandsByName(app.Commands))
 

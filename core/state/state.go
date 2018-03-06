@@ -268,6 +268,66 @@ func (self *StateDB) Copy() *StateDB {
 	return state
 }
 
+func (self *StateDB) AddLog(log *types.Log) {
+	self.journal = append(self.journal, addLogChange{txhash: self.thash})
+
+	log.TxHash = self.thash
+	log.BlockHash = self.bhash
+	log.TxIndex = uint(self.txIndex)
+	log.Index = self.logSize
+	self.logs[self.thash] = append(self.logs[self.thash], log)
+	self.logSize++
+}
+
+func (self *StateDB) GetLogs(hash common.Hash) []*types.Log {
+	return self.logs[hash]
+}
+
+// AddPreimage records a SHA3 preimage seen by the VM.
+func (self *StateDB) AddPreimage(hash common.Hash, preimage []byte) {
+	if _, ok := self.preimages[hash]; !ok {
+		self.journal = append(self.journal, addPreimageChange{hash: hash})
+		pi := make([]byte, len(preimage))
+		copy(pi, preimage)
+		self.preimages[hash] = pi
+	}
+}
+
+func (self *StateDB) AddRefund(gas uint64) {
+	self.journal = append(self.journal, refundChange{prev: self.refund})
+	self.refund += gas
+}
+
+// CreateAccount explicitly creates a state object. If a state object with the address
+// already exists the balance is carried over to the new account.
+//
+// CreateAccount is called during the EVM CREATE operation. The situation might arise that
+// a contract does the following:
+//
+//   1. sends funds to sha(account ++ (nonce + 1))
+//   2. tx_create(sha(account ++ nonce)) (note that this gets the address of 1)
+//
+// Carrying over the balance ensures that Ether doesn't disappear.
+func (self *StateDB) CreateAccount(addr common.Address) {
+	new, prev := self.createObject(addr)
+	if prev != nil {
+		new.setBalance(prev.data.Balance)
+	}
+}
+
+// Empty returns whether the state object is either non-existent
+// or empty according to the EIP161 specification (balance = nonce = code = 0)
+func (self *StateDB) Empty(addr common.Address) bool {
+	so := self.getStateObject(addr)
+	return so == nil || so.empty()
+}
+
+// Exist reports whether the given account address exists in the state.
+// Notably this also returns true for suicided accounts.
+func (self *StateDB) Exist(addr common.Address) bool {
+	return self.getStateObject(addr) != nil
+}
+
 type Code []byte
 
 type Storage map[common.Hash]common.Hash
@@ -503,6 +563,100 @@ func (self *StateDB) RevertToSnapshot(revid int) {
 
 	// Remove invalidated snapshots from the stack.
 	self.validRevisions = self.validRevisions[:idx]
+}
+
+func (db *StateDB) ForEachStorage(addr common.Address, cb func(key, value common.Hash) bool) {
+	so := db.getStateObject(addr)
+	if so == nil {
+		return
+	}
+
+	// When iterating over the storage check the cache first
+	for h, value := range so.cachedStorage {
+		cb(h, value)
+	}
+
+	it := trie.NewIterator(so.getTrie(db.db).NodeIterator(nil))
+	for it.Next() {
+		// ignore cached values
+		key := common.BytesToHash(db.trie.GetKey(it.Key))
+		if _, ok := so.cachedStorage[key]; !ok {
+			cb(key, common.BytesToHash(it.Value))
+		}
+	}
+}
+
+func (self *StateDB) GetCode(addr common.Address) []byte {
+	stateObject := self.getStateObject(addr)
+	if stateObject != nil {
+		return stateObject.Code(self.db)
+	}
+	return nil
+}
+
+func (self *StateDB) GetCodeHash(addr common.Address) common.Hash {
+	stateObject := self.getStateObject(addr)
+	if stateObject == nil {
+		return common.Hash{}
+	}
+	return common.BytesToHash(stateObject.CodeHash())
+}
+
+func (self *StateDB) GetCodeSize(addr common.Address) int {
+	stateObject := self.getStateObject(addr)
+	if stateObject == nil {
+		return 0
+	}
+	if stateObject.code != nil {
+		return len(stateObject.code)
+	}
+	size, err := self.db.ContractCodeSize(stateObject.addrHash, common.BytesToHash(stateObject.CodeHash()))
+	if err != nil {
+		self.setError(err)
+	}
+	return size
+}
+
+// GetRefund returns the current value of the refund counter.
+func (self *StateDB) GetRefund() uint64 {
+	return self.refund
+}
+
+func (self *StateDB) GetState(a common.Address, b common.Hash) common.Hash {
+	stateObject := self.getStateObject(a)
+	if stateObject != nil {
+		return stateObject.GetState(self.db, b)
+	}
+	return common.Hash{}
+}
+
+func (self *StateDB) HasSuicided(addr common.Address) bool {
+	stateObject := self.getStateObject(addr)
+	if stateObject != nil {
+		return stateObject.suicided
+	}
+	return false
+}
+
+// Suicide marks the given account as suicided.
+// This clears the account balance.
+//
+// The account's state object is still available until the state is committed,
+// getStateObject will return a non-nil account after Suicide.
+func (self *StateDB) Suicide(addr common.Address) bool {
+	stateObject := self.getStateObject(addr)
+	if stateObject == nil {
+		return false
+	}
+	self.journal = append(self.journal, suicideChange{
+		account:     &addr,
+		prev:        stateObject.suicided,
+		prevbalance: new(big.Int).Set(stateObject.Balance()),
+	})
+	stateObject.markSuicided()
+	stateObject.data.Balance = new(big.Int)
+
+	return true
 }
 
 type cachingDB struct {
@@ -837,4 +991,12 @@ func (self *stateObject) deepCopy(db *StateDB, onDirty func(addr common.Address)
 
 func (self *stateObject) Nonce() uint64 {
 	return self.data.Nonce
+}
+
+func (self *stateObject) markSuicided() {
+	self.suicided = true
+	if self.onDirty != nil {
+		self.onDirty(self.Address())
+		self.onDirty = nil
+	}
 }

@@ -10,6 +10,37 @@ import (
 // iteratorEnd is stored in nodeIterator.err when iteration is done.
 var iteratorEnd = errors.New("end of iteration")
 
+// Iterator is a key-value trie iterator that traverses a Trie.
+type Iterator struct {
+	nodeIt NodeIterator
+
+	Key   []byte // Current data key on which the iterator is positioned on
+	Value []byte // Current data value on which the iterator is positioned on
+	Err   error
+}
+
+// Next moves the iterator forward one key-value entry.
+func (it *Iterator) Next() bool {
+	for it.nodeIt.Next(true) {
+		if it.nodeIt.Leaf() {
+			it.Key = it.nodeIt.LeafKey()
+			it.Value = it.nodeIt.LeafBlob()
+			return true
+		}
+	}
+	it.Key = nil
+	it.Value = nil
+	it.Err = it.nodeIt.Error()
+	return false
+}
+
+// NewIterator creates a new key-value iterator from a node iterator
+func NewIterator(it NodeIterator) *Iterator {
+	return &Iterator{
+		nodeIt: it,
+	}
+}
+
 // nodeIteratorState represents the iteration state at one particular node of the
 // trie, which can be resumed at a later invocation.
 type nodeIteratorState struct {

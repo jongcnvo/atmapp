@@ -74,6 +74,13 @@ func (ac *accountCache) accounts() []accounts.Account {
 	return cpy
 }
 
+func (ac *accountCache) hasAddress(addr common.Address) bool {
+	ac.maybeReload()
+	ac.mu.Lock()
+	defer ac.mu.Unlock()
+	return len(ac.byAddr[addr]) > 0
+}
+
 func (ac *accountCache) add(newAccount accounts.Account) {
 	ac.mu.Lock()
 	defer ac.mu.Unlock()

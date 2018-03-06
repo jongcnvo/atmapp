@@ -90,3 +90,29 @@ func (ch storageChange) undo(s *StateDB) {
 func (ch nonceChange) undo(s *StateDB) {
 	s.getStateObject(*ch.account).setNonce(ch.prev)
 }
+
+func (ch addLogChange) undo(s *StateDB) {
+	logs := s.logs[ch.txhash]
+	if len(logs) == 1 {
+		delete(s.logs, ch.txhash)
+	} else {
+		s.logs[ch.txhash] = logs[:len(logs)-1]
+	}
+	s.logSize--
+}
+
+func (ch addPreimageChange) undo(s *StateDB) {
+	delete(s.preimages, ch.hash)
+}
+
+func (ch refundChange) undo(s *StateDB) {
+	s.refund = ch.prev
+}
+
+func (ch suicideChange) undo(s *StateDB) {
+	obj := s.getStateObject(*ch.account)
+	if obj != nil {
+		obj.suicided = ch.prev
+		obj.setBalance(ch.prevbalance)
+	}
+}

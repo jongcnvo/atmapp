@@ -197,3 +197,10 @@ type Rules struct {
 	IsHomestead, IsEIP150, IsEIP155, IsEIP158 bool
 	IsByzantium                               bool
 }
+
+// GasTable returns the gas table corresponding to the current phase (homestead or homestead reprice).
+//
+// The returned GasTable's fields shouldn't, under any circumstances, be changed.
+func (c *ChainConfig) GasTable(num *big.Int) GasTable {
+	return GasTableMain
+}

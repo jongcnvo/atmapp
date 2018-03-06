@@ -253,6 +253,7 @@ func (c *jsonCodec) ParseRequestArguments(argTypes []reflect.Type, params interf
 // given types. It returns the parsed values or an error when the args could not be
 // parsed. Missing optional arguments are returned as reflect.Zero values.
 func parsePositionalArguments(rawArgs json.RawMessage, types []reflect.Type) ([]reflect.Value, Error) {
+	log.Info("Parse position arguments")
 	// Read beginning of the args array.
 	dec := json.NewDecoder(bytes.NewReader(rawArgs))
 	if tok, _ := dec.Token(); tok != json.Delim('[') {

@@ -1,6 +1,7 @@
 package math
 
 import (
+	"fmt"
 	"math/big"
 )
 
@@ -17,6 +18,27 @@ const (
 	// number of bytes in a big.Word
 	wordBytes = wordBits / 8
 )
+
+// HexOrDecimal256 marshals big.Int as hex or decimal.
+type HexOrDecimal256 big.Int
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (i *HexOrDecimal256) UnmarshalText(input []byte) error {
+	bigint, ok := ParseBig256(string(input))
+	if !ok {
+		return fmt.Errorf("invalid hex or decimal integer %q", input)
+	}
+	*i = HexOrDecimal256(*bigint)
+	return nil
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (i *HexOrDecimal256) MarshalText() ([]byte, error) {
+	if i == nil {
+		return []byte("0x0"), nil
+	}
+	return []byte(fmt.Sprintf("%#x", (*big.Int)(i))), nil
+}
 
 // BigPow returns a ** b as a big integer.
 func BigPow(a, b int64) *big.Int {
@@ -65,4 +87,88 @@ func ParseBig256(s string) (*big.Int, bool) {
 		bigint, ok = nil, false
 	}
 	return bigint, ok
+}
+
+// bigEndianByteAt returns the byte at position n,
+// in Big-Endian encoding
+// So n==0 returns the least significant byte
+func bigEndianByteAt(bigint *big.Int, n int) byte {
+	words := bigint.Bits()
+	// Check word-bucket the byte will reside in
+	i := n / wordBytes
+	if i >= len(words) {
+		return byte(0)
+	}
+	word := words[i]
+	// Offset of the byte
+	shift := 8 * uint(n%wordBytes)
+
+	return byte(word >> shift)
+}
+
+// Byte returns the byte at position n,
+// with the supplied padlength in Little-Endian encoding.
+// n==0 returns the MSB
+// Example: bigint '5', padlength 32, n=31 => 5
+func Byte(bigint *big.Int, padlength, n int) byte {
+	if n >= padlength {
+		return byte(0)
+	}
+	return bigEndianByteAt(bigint, padlength-1-n)
+}
+
+// U256 encodes as a 256 bit two's complement number. This operation is destructive.
+func U256(x *big.Int) *big.Int {
+	return x.And(x, tt256m1)
+}
+
+// S256 interprets x as a two's complement number.
+// x must not exceed 256 bits (the result is undefined if it does) and is not modified.
+//
+//   S256(0)        = 0
+//   S256(1)        = 1
+//   S256(2**255)   = -2**255
+//   S256(2**256-1) = -1
+func S256(x *big.Int) *big.Int {
+	if x.Cmp(tt255) < 0 {
+		return x
+	} else {
+		return new(big.Int).Sub(x, tt256)
+	}
+}
+
+// Exp implements exponentiation by squaring.
+// Exp returns a newly-allocated big integer and does not change
+// base or exponent. The result is truncated to 256 bits.
+//
+// Courtesy @karalabe and @chfast
+func Exp(base, exponent *big.Int) *big.Int {
+	result := big.NewInt(1)
+
+	for _, word := range exponent.Bits() {
+		for i := 0; i < wordBits; i++ {
+			if word&1 == 1 {
+				U256(result.Mul(result, base))
+			}
+			U256(base.Mul(base, base))
+			word >>= 1
+		}
+	}
+	return result
+}
+
+// BigMax returns the larger of x or y.
+func BigMax(x, y *big.Int) *big.Int {
+	if x.Cmp(y) < 0 {
+		return y
+	}
+	return x
+}
+
+// BigMin returns the smaller of x or y.
+func BigMin(x, y *big.Int) *big.Int {
+	if x.Cmp(y) > 0 {
+		return y
+	}
+	return x
 }

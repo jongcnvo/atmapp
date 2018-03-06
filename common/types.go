@@ -118,11 +118,14 @@ func BytesToHash(b []byte) Hash {
 	return h
 }
 
+func BigToHash(b *big.Int) Hash { return BytesToHash(b.Bytes()) }
+
 //HexToHash set the hash to the value of s
 func HexToHash(s string) Hash { return BytesToHash(FromHex(s)) }
 
 //Hex convert hash to hex string
-func (h Hash) Hex() string { return Encode(h[:]) }
+func (h Hash) Hex() string   { return Encode(h[:]) }
+func (h Hash) Big() *big.Int { return new(big.Int).SetBytes(h[:]) }
 
 //Bytes convert hash to byte slice
 func (h Hash) Bytes() []byte { return h[:] }
@@ -165,6 +168,7 @@ func HexToAddress(s string) Address { return BytesToAddress(FromHex(s)) }
 
 //Bytes convert address to byte slice
 func (a Address) Bytes() []byte { return a[:] }
+func (a Address) Big() *big.Int { return new(big.Int).SetBytes(a[:]) }
 
 // MarshalText returns the hex representation of a.
 func (a Address) MarshalText() ([]byte, error) {
@@ -395,4 +399,9 @@ func (h *Hash) Set(other Hash) {
 	for i, v := range other {
 		h[i] = v
 	}
+}
+
+// UnmarshalJSON parses a hash in hex syntax.
+func (a *Address) UnmarshalJSON(input []byte) error {
+	return hexutil.UnmarshalFixedJSON(addressT, input, a[:])
 }

@@ -1292,3 +1292,6 @@ func (bc *BlockChain) Rollback(chain []common.Hash) {
 func (bc *BlockChain) Genesis() *types.Block {
 	return bc.genesisBlock
 }
+
+// Engine retrieves the blockchain's consensus engine.
+func (bc *BlockChain) Engine() consensus.Engine { return bc.engine }

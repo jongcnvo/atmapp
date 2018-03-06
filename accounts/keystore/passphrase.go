@@ -151,6 +151,12 @@ func (ks keyStorePassphrase) StoreKey(filename string, key *Key, auth string) er
 	return writeKeyFile(filename, keyjson)
 }
 
+// StoreKey generates a key, encrypts with 'auth' and stores in the given directory
+func StoreKey(dir, auth string, scryptN, scryptP int) (common.Address, error) {
+	_, a, err := storeNewKey(&keyStorePassphrase{dir, scryptN, scryptP}, crand.Reader, auth)
+	return a.Address, err
+}
+
 // EncryptKey encrypts a key using the specified scrypt parameters into a json
 // blob that can be decrypted later on.
 func EncryptKey(key *Key, auth string, scryptN, scryptP int) ([]byte, error) {

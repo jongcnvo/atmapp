@@ -51,7 +51,7 @@ type Backend interface {
 }
 
 func GetAPIs(apiBackend Backend) []rpc.API {
-	//nonceLock := new(AddrLocker)
+	nonceLock := new(AddrLocker)
 	return []rpc.API{
 		{
 			Namespace: "atm",
@@ -63,12 +63,14 @@ func GetAPIs(apiBackend Backend) []rpc.API {
 			Version:   "1.0",
 			Service:   NewPublicBlockChainAPI(apiBackend),
 			Public:    true,
-		}, /*{
+		},
+		{
 			Namespace: "atm",
 			Version:   "1.0",
 			Service:   NewPublicTransactionPoolAPI(apiBackend, nonceLock),
 			Public:    true,
-		}, {
+		},
+		/*{
 			Namespace: "txpool",
 			Version:   "1.0",
 			Service:   NewPublicTxPoolAPI(apiBackend),
