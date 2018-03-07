@@ -5395,7 +5395,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var estimateGas = new Method({
             name: 'estimateGas',
-            call: 'eth_estimateGas',
+            call: 'atm_estimateGas',
             params: 1,
             inputFormatter: [formatters.inputCallFormatter],
             outputFormatter: utils.toDecimal

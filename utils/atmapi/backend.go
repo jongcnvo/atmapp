@@ -6,9 +6,11 @@ import (
 
 	"github.com/atmchain/atmapp/accounts"
 	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/core"
 	"github.com/atmchain/atmapp/core/state"
 	"github.com/atmchain/atmapp/core/types"
-	"github.com/atmchain/atmapp/db" 
+	"github.com/atmchain/atmapp/core/vm"
+	"github.com/atmchain/atmapp/db"
 	"github.com/atmchain/atmapp/params"
 	"github.com/atmchain/atmapp/rpc"
 )
@@ -32,7 +34,7 @@ type Backend interface {
 	GetBlock(ctx context.Context, blockHash common.Hash) (*types.Block, error)
 	GetReceipts(ctx context.Context, blockHash common.Hash) (types.Receipts, error)
 	GetTd(blockHash common.Hash) *big.Int
-	//GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error)
+	GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error)
 	//SubscribeChainEvent(ch chan<- core.ChainEvent) event.Subscription
 	//SubscribeChainHeadEvent(ch chan<- core.ChainHeadEvent) event.Subscription
 	//SubscribeChainSideEvent(ch chan<- core.ChainSideEvent) event.Subscription

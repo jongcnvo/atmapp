@@ -7,9 +7,11 @@ import (
 	"github.com/atmchain/atmapp/accounts"
 	"github.com/atmchain/atmapp/atm/gasprice"
 	"github.com/atmchain/atmapp/common"
+	"github.com/atmchain/atmapp/common/math"
 	"github.com/atmchain/atmapp/core"
 	"github.com/atmchain/atmapp/core/state"
 	"github.com/atmchain/atmapp/core/types"
+	"github.com/atmchain/atmapp/core/vm"
 	"github.com/atmchain/atmapp/db"
 	"github.com/atmchain/atmapp/event"
 	"github.com/atmchain/atmapp/params"
@@ -118,4 +120,12 @@ func (b *ATMApiBackend) SuggestPrice(ctx context.Context) (*big.Int, error) {
 
 func (b *ATMApiBackend) GetPoolNonce(ctx context.Context, addr common.Address) (uint64, error) {
 	return b.atm.txPool.State().GetNonce(addr), nil
+}
+
+func (b *ATMApiBackend) GetEVM(ctx context.Context, msg core.Message, state *state.StateDB, header *types.Header, vmCfg vm.Config) (*vm.EVM, func() error, error) {
+	state.SetBalance(msg.From(), math.MaxBig256)
+	vmError := func() error { return nil }
+
+	context := core.NewEVMContext(msg, header, b.atm.BlockChain(), nil)
+	return vm.NewEVM(context, state, b.atm.chainConfig, vmCfg), vmError, nil
 }
