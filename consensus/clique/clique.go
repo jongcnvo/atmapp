@@ -256,7 +256,7 @@ func (c *Clique) VerifyUncles(chain consensus.ChainReader, block *types.Block) e
 func (c *Clique) Prepare(chain consensus.ChainReader, header *types.Header) error {
 	// If the block isn't a checkpoint, cast a random vote (good enough for now)
 	header.Coinbase = common.Address{}
-	//header.Nonce = types.BlockNonce{}
+	header.Nonce = common.BlockNonce{}
 
 	number := header.Number.Uint64()
 	// Assemble the voting snapshot to check which votes make sense

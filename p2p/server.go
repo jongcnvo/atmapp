@@ -510,7 +510,7 @@ running:
 				// If message events are enabled, pass the peerFeed
 				// to the peer
 				if srv.EnableMsgEvents {
-					//p.events = &srv.peerFeed
+					p.events = &srv.peerFeed
 				}
 				name := truncateName(c.name)
 				srv.log.Debug("Adding p2p peer", "name", name, "addr", c.fd.RemoteAddr(), "peers", len(peers)+1)
