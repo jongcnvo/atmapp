@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"sort"
 	"sync"
@@ -374,12 +373,6 @@ func (p *Peer) handle(msg Msg) error {
 	return nil
 }
 
-// Discard reads any remaining payload data into a black hole.
-func (msg Msg) Discard() error {
-	_, err := io.Copy(ioutil.Discard, msg.Payload)
-	return err
-}
-
 // matchProtocols creates structures for matching named subprotocols.
 func matchProtocols(protocols []Protocol, caps []Cap, rw MsgReadWriter) map[string]*protoRW {
 	sort.Sort(capsByNameAndVersion(caps))
@@ -413,9 +406,9 @@ func (p *Peer) startProtocols(writeStart <-chan struct{}, writeErr chan<- error)
 		proto.wstart = writeStart
 		proto.werr = writeErr
 		var rw MsgReadWriter = proto
-		//if p.events != nil {
-		//	rw = newMsgEventer(rw, p.events, p.ID(), proto.Name)
-		//}
+		if p.events != nil {
+			rw = newMsgEventer(rw, p.events, p.ID(), proto.Name)
+		}
 		p.log.Trace(fmt.Sprintf("Starting protocol %s/%d", proto.Name, proto.Version))
 		go func() {
 			err := proto.Run(p, rw)
@@ -440,29 +433,6 @@ func (p *Peer) getProto(code uint64) (*protoRW, error) {
 		}
 	}
 	return nil, newPeerError(errInvalidMsgCode, "%d", code)
-}
-
-// Send writes an RLP-encoded message with the given code.
-// data should encode as an RLP list.
-func Send(w MsgWriter, msgcode uint64, data interface{}) error {
-	size, r, err := rlp.EncodeToReader(data)
-	if err != nil {
-		return err
-	}
-	return w.WriteMsg(Msg{Code: msgcode, Size: uint32(size), Payload: r})
-}
-
-// SendItems writes an RLP with the given code and data elements.
-// For a call such as:
-//
-//    SendItems(w, code, e1, e2, e3)
-//
-// the message payload will be an RLP list containing the items:
-//
-//    [e1, e2, e3]
-//
-func SendItems(w MsgWriter, msgcode uint64, elems ...interface{}) error {
-	return Send(w, msgcode, elems)
 }
 
 func countMatchingProtocols(protocols []Protocol, caps []Cap) int {
