@@ -41,7 +41,11 @@ $ build/bin/atmapp
 
 SUB COMMANDS:
 
+  account  Manage accounts
+
   console  Start an interactive Javascript environment
+
+  removedb Remove blockchain and state databases
 
 GLOBAL OPTIONS:
 
@@ -58,3 +62,11 @@ GLOBAL OPTIONS:
   --nodiscover                  Disables the peer discovery mechanism (manual peer addition)
 
   --verbosity value             Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail (default: 3)
+
+  --rpc                         Enable the HTTP-RPC server
+  
+  --rpcaddr value               HTTP-RPC server listening interface (default: "localhost")
+  
+  --rpcport value               HTTP-RPC server listening port (default: 8545)
+  
+  --rpcapi value                API's offered over the HTTP-RPC interface
