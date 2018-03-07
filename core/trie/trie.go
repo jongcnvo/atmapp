@@ -48,6 +48,11 @@ type node interface {
 	canUnload(cachegen, cachelimit uint16) bool
 }
 
+// EncodeRLP encodes a full node into the consensus RLP format.
+func (n *fullNode) EncodeRLP(w io.Writer) error {
+	return rlp.Encode(w, n.Children)
+}
+
 func (n *fullNode) copy() *fullNode   { copy := *n; return &copy }
 func (n *shortNode) copy() *shortNode { copy := *n; return &copy }
 
