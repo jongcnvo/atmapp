@@ -49,24 +49,24 @@ SUB COMMANDS:
 
 GLOBAL OPTIONS:
 
-  --datadir value               Data directory for the databases and keystore
+  * `--datadir value` Data directory for the databases and keystore
   
-  --identity value              Custom node name
+  * `--identity value` Custom node name
+           
+  * `--unlock value` Comma separated list of accounts to unlock
 
-  --unlock value                Comma separated list of accounts to unlock
-
-  --mine                        Enable mining
+  * `--mine` Enable mining
   
-  --port value                  Network listening port (default: 30303)
+  * `--port value` Network listening port (default: 30303)
 
-  --nodiscover                  Disables the peer discovery mechanism (manual peer addition)
+  * `--nodiscover` Disables the peer discovery mechanism (manual peer addition)
 
-  --verbosity value             Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail (default: 3)
+  * `--verbosity value` Logging verbosity: 0=silent, 1=error, 2=warn, 3=info, 4=debug, 5=detail (default: 3)
 
-  --rpc                         Enable the HTTP-RPC server
+  * `--rpc` Enable the HTTP-RPC server
   
-  --rpcaddr value               HTTP-RPC server listening interface (default: "localhost")
+  * `--rpcaddr value` HTTP-RPC server listening interface (default: "localhost")
   
-  --rpcport value               HTTP-RPC server listening port (default: 8545)
+  * `--rpcport value` HTTP-RPC server listening port (default: 8545)
   
-  --rpcapi value                API's offered over the HTTP-RPC interface
+  * `--rpcapi value` API's offered over the HTTP-RPC interface
