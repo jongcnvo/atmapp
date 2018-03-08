@@ -419,6 +419,15 @@ func (s *PublicTransactionPoolAPI) GetTransactionByHash(ctx context.Context, has
 	return nil
 }
 
+// GetBlockTransactionCountByNumber returns the number of transactions in the block with the given block number.
+func (s *PublicTransactionPoolAPI) GetBlockTransactionCountByNumber(ctx context.Context, blockNr rpc.BlockNumber) *hexutil.Uint {
+	if block, _ := s.b.BlockByNumber(ctx, blockNr); block != nil {
+		n := hexutil.Uint(len(block.Transactions()))
+		return &n
+	}
+	return nil
+}
+
 // newRPCPendingTransaction returns a pending transaction that will serialize to the RPC representation
 func newRPCPendingTransaction(tx *types.Transaction) *RPCTransaction {
 	return newRPCTransaction(tx, common.Hash{}, 0, 0)
@@ -618,7 +627,17 @@ func NewPublicNetAPI(net *p2p.Server, networkVersion uint64) *PublicNetAPI {
 	return &PublicNetAPI{net, networkVersion}
 }
 
+// Listening returns an indication if the node is listening for network connections.
+func (s *PublicNetAPI) Listening() bool {
+	return true // always listening
+}
+
 // PeerCount returns the number of connected peers
 func (s *PublicNetAPI) PeerCount() uint64 {
 	return uint64(s.net.PeerCount())
+}
+
+// Version returns the current ethereum protocol version.
+func (s *PublicNetAPI) Version() string {
+	return fmt.Sprintf("%d", s.networkVersion)
 }

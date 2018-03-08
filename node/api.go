@@ -72,3 +72,18 @@ func (api *PrivateAdminAPI) AddPeer(url string) (bool, error) {
 	server.AddPeer(node)
 	return true, nil
 }
+
+// PublicWeb3API offers helper utils
+type PublicWeb3API struct {
+	stack *Node
+}
+
+// NewPublicWeb3API creates a new Web3Service instance
+func NewPublicWeb3API(stack *Node) *PublicWeb3API {
+	return &PublicWeb3API{stack}
+}
+
+// ClientVersion returns the node name
+func (s *PublicWeb3API) ClientVersion() string {
+	return s.stack.Server().Name
+}

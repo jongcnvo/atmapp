@@ -2609,13 +2609,8 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 inputFormatter: utils.toDecimal
             }),
             new Property({
-                name: 'version.ethereum',
-                getter: 'eth_protocolVersion',
-                inputFormatter: utils.toDecimal
-            }),
-            new Property({
-                name: 'version.whisper',
-                getter: 'shh_version',
+                name: 'version.atmapp',
+                getter: 'atm_protocolVersion',
                 inputFormatter: utils.toDecimal
             })
         ];
@@ -5211,7 +5206,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     };
     
     var transactionFromBlockCall = function (args) {
-        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'eth_getTransactionByBlockHashAndIndex' : 'eth_getTransactionByBlockNumberAndIndex';
+        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'atm_getTransactionByBlockHashAndIndex' : 'atm_getTransactionByBlockNumberAndIndex';
     };
     
     var uncleCall = function (args) {
@@ -5219,7 +5214,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     };
     
     var getBlockTransactionCountCall = function (args) {
-        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'eth_getBlockTransactionCountByHash' : 'eth_getBlockTransactionCountByNumber';
+        return (utils.isString(args[0]) && args[0].indexOf('0x') === 0) ? 'atm_getBlockTransactionCountByHash' : 'atm_getBlockTransactionCountByNumber';
     };
     
     var uncleCountCall = function (args) {
@@ -5277,7 +5272,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var getStorageAt = new Method({
             name: 'getStorageAt',
-            call: 'eth_getStorageAt',
+            call: 'atm_getStorageAt',
             params: 3,
             inputFormatter: [null, utils.toHex, formatters.inputDefaultBlockNumberFormatter]
         });
