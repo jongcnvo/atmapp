@@ -37,6 +37,10 @@ func (b *ATMApiBackend) SetHead(number uint64) {
 	b.atm.blockchain.SetHead(number)
 }
 
+func (b *ATMApiBackend) GetPoolTransaction(hash common.Hash) *types.Transaction {
+	return b.atm.txPool.Get(hash)
+}
+
 func (b *ATMApiBackend) HeaderByNumber(ctx context.Context, blockNr rpc.BlockNumber) (*types.Header, error) {
 	// Pending block is only known by the miner
 	if blockNr == rpc.PendingBlockNumber {

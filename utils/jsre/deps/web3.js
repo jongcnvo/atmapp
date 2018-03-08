@@ -5284,7 +5284,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var getCode = new Method({
             name: 'getCode',
-            call: 'eth_getCode',
+            call: 'atm_getCode',
             params: 2,
             inputFormatter: [formatters.inputAddressFormatter, formatters.inputDefaultBlockNumberFormatter]
         });
@@ -5388,7 +5388,7 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var call = new Method({
             name: 'call',
-            call: 'eth_call',
+            call: 'atm_call',
             params: 2,
             inputFormatter: [formatters.inputCallFormatter, formatters.inputDefaultBlockNumberFormatter]
         });
@@ -6016,13 +6016,13 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
                 case 'latest':
                     args.shift();
                     this.params = 0;
-                    return 'eth_newBlockFilter';
+                    return 'atm_newBlockFilter';
                 case 'pending':
                     args.shift();
                     this.params = 0;
-                    return 'eth_newPendingTransactionFilter';
+                    return 'atm_newPendingTransactionFilter';
                 default:
-                    return 'eth_newFilter';
+                    return 'atm_newFilter';
             }
         };
     
@@ -6034,19 +6034,19 @@ require=(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof requ
     
         var uninstallFilter = new Method({
             name: 'uninstallFilter',
-            call: 'eth_uninstallFilter',
+            call: 'atm_uninstallFilter',
             params: 1
         });
     
         var getLogs = new Method({
             name: 'getLogs',
-            call: 'eth_getFilterLogs',
+            call: 'atm_getFilterLogs',
             params: 1
         });
     
         var poll = new Method({
             name: 'poll',
-            call: 'eth_getFilterChanges',
+            call: 'atm_getFilterChanges',
             params: 1
         });
     

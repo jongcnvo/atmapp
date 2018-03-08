@@ -34,6 +34,7 @@ var (
 	preimagePrefix = "secure-key-" // preimagePrefix + hash -> preimage
 
 	ErrChainConfigNotFound = errors.New("ChainConfig not found") // general config not found error
+	oldTxMetaSuffix        = []byte{0x01}
 )
 
 // DatabaseDeleter wraps the Delete method of a backing data store.
@@ -348,6 +349,58 @@ func GetBlock(db DatabaseReader, hash common.Hash, number uint64) *types.Block {
 	}
 	// Reassemble the block and return
 	return types.NewBlockWithHeader(header).WithBody(body.Transactions, body.Uncles)
+}
+
+// GetTxLookupEntry retrieves the positional metadata associated with a transaction
+// hash to allow retrieving the transaction or receipt by hash.
+func GetTxLookupEntry(db DatabaseReader, hash common.Hash) (common.Hash, uint64, uint64) {
+	// Load the positional metadata from disk and bail if it fails
+	data, _ := db.Get(append(lookupPrefix, hash.Bytes()...))
+	if len(data) == 0 {
+		return common.Hash{}, 0, 0
+	}
+	// Parse and return the contents of the lookup entry
+	var entry TxLookupEntry
+	if err := rlp.DecodeBytes(data, &entry); err != nil {
+		log.Error("Invalid lookup entry RLP", "hash", hash, "err", err)
+		return common.Hash{}, 0, 0
+	}
+	return entry.BlockHash, entry.BlockIndex, entry.Index
+}
+
+// GetTransaction retrieves a specific transaction from the database, along with
+// its added positional metadata.
+func GetTransaction(db DatabaseReader, hash common.Hash) (*types.Transaction, common.Hash, uint64, uint64) {
+	// Retrieve the lookup metadata and resolve the transaction from the body
+	blockHash, blockNumber, txIndex := GetTxLookupEntry(db, hash)
+
+	if blockHash != (common.Hash{}) {
+		body := GetBody(db, blockHash, blockNumber)
+		if body == nil || len(body.Transactions) <= int(txIndex) {
+			log.Error("Transaction referenced missing", "number", blockNumber, "hash", blockHash, "index", txIndex)
+			return nil, common.Hash{}, 0, 0
+		}
+		return body.Transactions[txIndex], blockHash, blockNumber, txIndex
+	}
+	// Old transaction representation, load the transaction and it's metadata separately
+	data, _ := db.Get(hash.Bytes())
+	if len(data) == 0 {
+		return nil, common.Hash{}, 0, 0
+	}
+	var tx types.Transaction
+	if err := rlp.DecodeBytes(data, &tx); err != nil {
+		return nil, common.Hash{}, 0, 0
+	}
+	// Retrieve the blockchain positional metadata
+	data, _ = db.Get(append(hash.Bytes(), oldTxMetaSuffix...))
+	if len(data) == 0 {
+		return nil, common.Hash{}, 0, 0
+	}
+	var entry TxLookupEntry
+	if err := rlp.DecodeBytes(data, &entry); err != nil {
+		return nil, common.Hash{}, 0, 0
+	}
+	return &tx, entry.BlockHash, entry.BlockIndex, entry.Index
 }
 
 // GetTd retrieves a block's total difficulty corresponding to the hash, nil if

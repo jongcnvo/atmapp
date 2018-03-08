@@ -7,6 +7,7 @@ import (
 	"github.com/atmchain/atmapp/core/types"
 	"github.com/atmchain/atmapp/core/vm"
 	"github.com/atmchain/atmapp/crypto"
+	"github.com/atmchain/atmapp/log"
 	"github.com/atmchain/atmapp/params"
 )
 
@@ -97,6 +98,7 @@ func ApplyTransaction(config *params.ChainConfig, bc *BlockChain, author *common
 	// if the transaction created a contract, store the creation address in the receipt.
 	if msg.To() == nil {
 		receipt.ContractAddress = crypto.CreateAddress(vmenv.Context.Origin, tx.Nonce())
+		log.Info("Apply tx", "Contract address", receipt.ContractAddress)
 	}
 	// Set the receipt logs and create a bloom for filtering
 	receipt.Logs = statedb.GetLogs(tx.Hash())
